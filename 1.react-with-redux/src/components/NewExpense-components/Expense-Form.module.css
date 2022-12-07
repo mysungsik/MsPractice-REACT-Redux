@@ -1,0 +1,8 @@
+.maindiv {
+  display: flex;
+  padding: 2rem;
+  background-color: gray;
+}
+.maindiv label {
+  color: white;
+}

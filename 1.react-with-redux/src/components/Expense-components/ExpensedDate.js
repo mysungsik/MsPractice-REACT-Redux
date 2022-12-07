@@ -7,7 +7,12 @@ function ExpensedDate(props) {
   return (
     <div className={styles.maindiv}>
       {Array.map((item) => (
-        <ExpensiveItem key={item.id} title={item.title} money={item.money} />
+        <ExpensiveItem
+          key={item.id}
+          title={item.title}
+          amount={item.amount}
+          date={item.date}
+        />
       ))}
     </div>
   );

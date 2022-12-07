@@ -1,17 +1,20 @@
+import { useState } from "react";
 import styles from "./ExpensiveItem.module.css";
 
 function ExpensiveItem(props) {
-  const { title, money } = props;
+  const { title, amount, date } = props;
   const expenseDate = new Date().toLocaleDateString("ko-KR");
 
-  console.log(expenseDate);
+  const [name, setName] = useState("none");
+
   return (
     <div className={styles.itemDiv}>
       <h1 className={styles.title}>{title}</h1>
       <div>
-        <h2>{money}</h2>
-        <div>{expenseDate}</div>
+        <h2>{amount}</h2>
+        <div>{date}</div>
       </div>
+      <button onClick={() => setName("lol")}> change </button>
     </div>
   );
 }
