@@ -6,3 +6,10 @@
 .maindiv label {
   color: white;
 }
+
+.maindiv .red {
+  color: red !important;
+}
+.maindiv .blue {
+  color: blue !important;
+}
