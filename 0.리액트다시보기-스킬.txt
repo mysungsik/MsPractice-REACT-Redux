@@ -273,4 +273,82 @@
 
         [너무 복잡하다면] 아웃소싱을 하는것, 그것이 덜 복잡하다
         
-            
+
+8. 날짜별 차트 만들기
+
+    1) Chart, ChartBar 를 준비한다.
+
+    2) Chart에, data(title, amount, date 등...)
+                month(label : 1~12월, 그에 따른 밸류) 를 준비한다.
+
+    3) select, option 으로 연도를 정하게 만든다.
+
+    4) 필터된 연도에 따라, 필터된 값만 ChartBar에 들어가게 한다.
+
+    5) 넘겨줄 값은, "각 개월", "개월에 따른 총 amount", "max amount"
+
+        [개월에 따른 총 amount]는, 
+            for 처리를 통해, data의 date 를 getMonth 로 뽑아,
+            각 month에 해당하는 value 를, [배열 INDEX] 처럼 활용해, 그 때의 [month value 를 바꿔준다].
+
+                        * "chartData 안에는, title, amount, date 가 들어있다."
+
+                    const { chartData } = props;
+
+                    const months = [
+                    { label: "1월", value: 0 },
+                            ...
+                    { label: "12월", value: 0 },
+                    ];
+                
+                
+                    for (const chart of chartData) {
+                        const monthData = new Date(chart.date).getMonth();
+                        months[monthData].value = months[monthData].value + chart.amount;
+                    }
+
+                => chartData의 각 항목마다, month 를 추출, 
+                    month 에 해당하는 INDEX 의 value 를
+                    해당 value에 추가하여,
+
+                    "최종적인 months" => [각 월]에 따른 [총 amount] 를 만든다.
+    
+    6) 넘겨준다.
+
+    7)  넘겨받은 chartBar 는
+
+        "얼마나 채워질지, % 로 바꿔서", "CSS를 조작하는 방법으로, 차트가 얼마나 채워질지 정리한다."
+
+                function ChartBar(props) {
+                    
+                    const { value, maxValue, label } = props;
+                
+                    let barFillWidth = "0%";
+                
+                    if (maxValue > 0) {
+                        barFillWidth = Math.round((value / maxValue) * 100) + "%";
+                    }
+                
+                    // 
+                    return (
+                    <div className={styles.maindiv}>
+                        <div className={styles.inner}>
+                        <div className={styles.fill} style={{ width: barFillWidth }}></div>
+                        </div>
+                        <div className={styles.label}>{label}</div>
+                    </div>
+                    );
+                }
+                export default ChartBar;
+
+
+                
+        ** [ style = {{ width: barFillWidth }} ]
+
+            "style을 컴포넌트 함수에서 정의할때"에는, "객체 안에 넣어서 사용"해야 하므로, style={ } "이것 안에, 객체(css style객체)가 하나 더 들어간 것"이다
+            특별한 구문이 아니라, CSS 스타일을 REACT에서 만질때, 객체를 써야하기 때문에 그런것이다.
+
+        ** transition 을 CSS에 넣으면 부드러운 움직임을 확인 할 수 있다.
+
+        
+    
