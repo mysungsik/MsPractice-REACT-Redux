@@ -1,0 +1,276 @@
+[INDEX]================================================================================================================================
+1. Card 등에, 동적 스타일 추가하기
+2. 여러개의 State 동시에 관리하기 [각각]
+3. 여러개의 State "객체를 사용하여" "한 State로" 관리하기 [객체로 한번에] with "prev"
+4. 상향식 컴포넌트 통신(자식에서 부모로) ***
+5. 여러번에 걸친 상향식 컴포넌트 통신(자식에서 부모로, 더 위로!) ***
+
+
+[SKILL]==============================================================================================================================
+
+1. Card 등에, 동적 스타일 추가하기
+
+    const styles = "card" + {props.style}
+
+    retrun (
+        <div className={styles}>
+            {props.children}
+        </div>
+    )
+
+   ==>  외부에서, Card 를 import 할때,
+        styles 를 다르게 주면, 
+        다른 className이 적용되어,
+        다른 스타일을 가지게되겠다.
+
+2. 여러개의 State 동시에 관리하기 [각각]
+
+        const [title, setTitle] = useState("none");
+        const [amount, setAmount] = useState("");
+        const [date, setDate] = useState("");
+
+        function submitHandler(e) {
+            e.preventDefault();
+            console.log(title, amount, date);
+        }
+
+        function titleChangeHandler(e) {
+            setTitle(e.target.value);
+        }
+        function amountChangeHandler(e) {
+            setAmount(e.target.value);
+        }
+        function dateChangeHandler(e) {
+            setDate(e.target.value);
+        }
+
+3. 여러개의 State "객체를 사용하여" "한 State로" 관리하기 [객체로 한번에] with "prev"
+    : prev 파라미터를 사용하면, 기존의 상태를 가져온다는 것을 활용
+
+        function ExpenseForm() {
+            const [userInput, setUserInput] = useState({
+                title: "", 
+                amount: "", 
+                date: "",
+            });
+        
+            function submitHandler(e) {
+                e.preventDefault();
+                console.log(userInput.title, userInput.amount, userInput.date);
+            }
+        
+            function titleChangeHandler(e) {
+                setUserInput((prev) => ({
+                    ...prev,
+                    title: e.target.value,
+                }));
+            }
+        
+            function amountChangeHandler(e) {
+                setUserInput((prev) => ({
+                    ...prev,
+                    amount: e.target.value,
+                }));
+            }
+        
+            function dateChangeHandler(e) {
+                setUserInput((prev) => ({
+                    ...prev,
+                    date: e.target.value,
+                }));
+            }
+        
+
+4. 상향식 컴포넌트 통신(자식에서 부모로) ***
+
+    <원리> 
+            "부모" 에서 "정의한 함수" 를 "자식 컴포넌트에게 넘긴다."
+
+            "자식 컴포넌트"에서 "부모에서 정의한 함수를 실행한다."
+
+            "자식 컴포넌트로 간 함수는", 부모가 "함수의 포인터"를 넘긴 것이기 때문에,
+
+            "자식 컴포넌트에서 실행하면", "자식 컴포넌트의 값을 가지고 부모 컴포넌트 안에서 실행된다."
+
+    <예시>
+
+        부모컴포넌트 : NewExpense
+        자식컴포넌트 : Expense-Form
+
+        <NewExpense> ==========================================
+
+            function NewExpense() {
+    
+-               function saveExpenseDataHandler(enteredExpenseData) {
+                    const expenseData = {
+                        ...enteredExpenseData,
+                        id: Math.random().toString(),
+                    };
+                    console.log(expenseData);
+                }
+            
+                return (
+                    <div className={styles.maindiv}>
+    -                   <ExpenseForm onSaveExpenseData={saveExpenseDataHandler} />
+                    </div>
+                );
+            }
+
+            export default NewExpense;
+
+
+
+        <Expense-Form> ==========================================
+
+            function ExpenseForm(props){
+                ...
+
+                function submitHandler(e) {
+                    e.preventDefault();
+                
+                    setUserInput({
+                      title: "",
+                      amount: "",
+                      date: "",
+                    });
+                
+-                   props.onSaveExpenseData(userInput);
+                }
+            }
+          
+
+    => "자식 컴포넌트의 userInput"을 가지고 "자식에서 함수를 실행시키면", 
+        포인터를 넘긴 것이기 때문에, 실질적으로 "부모 컴포넌트의 함수에서 실행되어"
+        "자식으로 넘겨받은 값을 저장 할 수 있다."
+
+    <결과>
+
+        NewExpense.js:10 
+
+        {title: 'dfg', amount: '123', date: '', id: '0.3271938085592352'}
+
+        => 실행 장소가 사실 "부모 컴포넌트"인 것을 알 수 있다.
+
+    
+5. 여러번에 걸친 상향식 컴포넌트 통신(자식에서 부모로, 더 위로!) ***
+
+    : 상향식 컴포넌트 통신을 이용하여, App.js 까지 올려보자
+
+
+        <App.js> ==========================================
+
+                export default function App() {
+
+-                   function saveExpenseDataHandler(data) {
+                        const fromChild = data;
+                        console.log(fromChild);
+                    }
+
+                    return (
+                        <div className="App">
+                            <h1> ms</h1>
+    -                       <NewExpense onSaveChildData={saveExpenseDataHandler} />
+                            <Expense />
+                        </div>
+                    );
+                }
+    
+        <NewExpense> ==========================================
+
+                function NewExpense(props) {
+
+-                   function saveExpenseDataHandler(enteredExpenseData) {
+                        const expenseData = {
+                            ...enteredExpenseData,
+                            id: Math.random().toString(),
+                        };
+                
+-                       props.onSaveChildData(expenseData);
+                    }
+
+        <Expense-Form> ==========================================
+
+                function ExpenseForm(props){
+                    ...
+
+                    function submitHandler(e) {
+                        e.preventDefault();
+                    
+                        setUserInput({
+                            title: "",
+                            amount: "",
+                            date: "",
+                        });
+                    
+ -                      props.onSaveExpenseData(userInput);
+                    }
+                }
+          
+
+    <결과>
+
+        App.js:7 
+
+        {title: 'dfgdfg', amount: '1234', date: '2022-11-29', id: '0.5602308443105115'}
+
+6. 날짜 필터하기 with, getFullYear(), getMonth(), toString() !
+
+    date = "2020-10-5"
+
+    1. [year 뽑고, String 으로]     ** "String 으로 바꿔주는게 중요하다"
+
+        new Date(item.date).getFullYear().toString()
+
+    2. filter 처리하기
+
+7. 조건부 렌더하기 [ &&, 삼항연산자, 변수에 저장하기, 완전히새로운 return 을 렌더하기]
+
+    1. &&
+            {true && <p> hi <p>}
+
+    2. 삼항연산자
+    
+            {true ? <p> hi <p> : <p> bye </p>}
+
+    3. 변수에 저장
+
+            let sentence = <p> hi <p>
+
+            if(조건){
+                sentence = <p> bye <p>
+            }
+
+            {sentence}
+
+        ** "복잡하다면, 변수에 저장을 사용 하는 것이 가장 가독성이 좋다."
+
+    4. 완전히 새로운 retrun 을 렌더하기
+
+            <컴포넌트>
+
+                function newComponent(props){
+
+                    const {...} = props
+
+                    if(...){
+                        retrun(
+                            <div> BYE </div>
+                        )
+                    }
+                    retrun (
+                        <div> hi ms </div>
+                        <div> say hi </div>
+                    )
+                }
+
+            <부모>
+
+                <newComponent />
+
+    => "복잡한 컴포넌트", 혹은 "아무것도 없다는 메시지", 둘 중 하나만 출력해야 한다면,
+        차라리, 새 컴포넌트를 만들어서, "안에 다른 반환값" 을 넣고, 부모에서 렌더하는 방법이 좋다.
+
+
+        [너무 복잡하다면] 아웃소싱을 하는것, 그것이 덜 복잡하다
+        
+            
