@@ -31,7 +31,7 @@ function ExpenseForm(props) {
   function amountChangeHandler(e) {
     setUserInput((prev) => ({
       ...prev,
-      amount: e.target.value,
+      amount: Number(e.target.value),
     }));
   }
 

@@ -1,0 +1,13 @@
+.maindiv {
+  width: 50rem;
+}
+
+.inner {
+  background-color: black;
+  height: 1rem;
+}
+
+.fill {
+  background-color: red;
+  height: 1rem;
+}

@@ -1,16 +1,31 @@
 import ExpensedDate from "./ExpensedDate";
+import ExpenseChart from "./ExpenseChart";
 import "./Expense.css";
 import { useEffect, useState } from "react";
 
 function Expense(props) {
-  const { fromNewExpense, yearValue } = props;
+  const { fromNewExpense } = props;
   const Array = [
-    { id: 1, title: "ms", amount: 3, date: "2020-10-05" },
-    { id: 2, title: "js", amount: 2, date: "2019-10-05" },
-    { id: 3, title: "jw", amount: 6, date: "2021-10-05" },
+    {
+      id: 1,
+      title: "ms",
+      amount: 3,
+      date: new Date("2020-10-05").toLocaleDateString(),
+    },
+    {
+      id: 2,
+      title: "js",
+      amount: 2,
+      date: new Date("2019-09-05").toLocaleDateString(),
+    },
+    {
+      id: 3,
+      title: "jw",
+      amount: 6,
+      date: new Date("2021-05-05").toLocaleDateString(),
+    },
   ];
   const [newArray, setNewArray] = useState(Array);
-  const [filtered, setFiltered] = useState([]);
 
   useEffect(() => {
     if (fromNewExpense) {
@@ -18,20 +33,12 @@ function Expense(props) {
     }
   }, [fromNewExpense]);
 
-  if (yearValue) {
-    const newAA = Array.map((item) => ({
-      ...item,
-      date: new Date(item.date).getFullYear().toString(),
-    }));
-
-    const newA = newAA.filter((item) => item.date === yearValue);
-
-    console.log(newA);
-  }
+  console.log(newArray);
 
   return (
     <div>
       <ExpensedDate Array={newArray} />
+      <ExpenseChart chartData={newArray} />
     </div>
   );
 }

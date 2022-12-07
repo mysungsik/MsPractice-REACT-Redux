@@ -1,0 +1,27 @@
+1. git clone https://github.com/mysungsik/MsPractice-REACT-Redux.git
+
+    + npm install
+    
+2. git init
+
+3. git branch -m master newb
+
+4. 코드작성
+
+5. git remote add origin https://github.com/mysungsik/MsPractice-REACT-Redux.git
+
+6. git add .
+
+7. git commit -m "..."
+
+8. git push origin newb
+
+9. [github에 가서] pull request 를 [팀장] 에게 보낸다.
+
+10. [팀장] pull request 확인
+
+11. [팀장] ok 하면 merge
+
+12. [팀원들] git pull https://github.com/mysungsik/MsPractice-REACT-Redux.git   [업데이트(최신화)]
+
+13. 코드 작성 및 push 반복
