@@ -4,6 +4,15 @@
 3. 여러개의 State "객체를 사용하여" "한 State로" 관리하기 [객체로 한번에] with "prev"
 4. 상향식 컴포넌트 통신(자식에서 부모로) ***
 5. 여러번에 걸친 상향식 컴포넌트 통신(자식에서 부모로, 더 위로!) ***
+6. 날짜 필터하기 with, getFullYear(), getMonth(), toString() !
+7. 조건부 렌더하기 [ &&, 삼항연산자, 변수에 저장하기, 완전히새로운 return 을 렌더하기]
+8. 날짜별 차트 만들기
+9. 컴포넌트 함수에서 style 관리하기
+10. 컴포넌트 함수에서 동적 style 관리하기
+11. 동적 className 설정하기
+12. "리액트 포털"이란?
+13. "리액트 포털"을 통해, 오버레이 컨텐츠를 표현하기(Modal 등 화면을 덮는 오버레이)
+14. useEffect를 이용하여, 디바운싱을 만들기 with "클린업함수", Check Validation
 
 
 [SKILL]==============================================================================================================================
@@ -350,5 +359,256 @@
 
         ** transition 을 CSS에 넣으면 부드러운 움직임을 확인 할 수 있다.
 
-        
+9. 컴포넌트 함수에서 style 관리하기
     
+    <label style={{ color: "red", fontSize: "40px" , ...}}> Title </label>
+
+10. 컴포넌트 함수에서 동적 style 관리하기
+
+    <label style={{ color: 조건 ? "red" : "blue" }}> Title </label>
+        
+
+11. 동적 className 설정하기
+
+    1) "" 없이 설정
+        const condition = true;
+        let dynamaicStyle;
+
+        if (conditions) {
+            dynamaicStyle = styles.red;
+        } else {
+            dynamaicStyle = styles.blue;
+        }
+
+        return (
+            <form className={styles.maindiv}>
+-               <label className={dynamaicStyle}> Title </label>
+
+        ** "" 없음을 명심
+
+
+    2) "" 사용하고 설정 (String 형태)  ==> styles[dynamaicStyle]
+
+        : 대괄호를 사용하면, ""(String 형태) 도, CSS의 클래스이름으로 사용할 수 있다.
+
+        const condition = true;
+        let dynamaicStyle;
+
+        if (conditions) {
+            dynamaicStyle = "red";
+        } else {
+            dynamaicStyle = "blue";
+        }
+
+        return (
+            <form className={styles.maindiv}>
+-               <label className={styles[dynamaicStyle]}> Title </label>
+
+    3) 삼항연산자와 합칠 수도 있다.
+                
+12. "리액트 포털"이란?
+
+    "Modal" 같은 "오버레이" 들은, 사실상,해당 HTML 과는 조금 다른 곳에서 실행되어어한다.
+
+    전혀 다른 종류의 컴포넌트이면서, 화면을 분리시키기도 하고, "연관이 전혀 없음에도 한 컴포넌트 안에 같이 있을 수도 있다."
+
+    마치 로그인 성공시 나오는 Modal 이, 로그인과는 전혀 관계 없는 컴포넌트 인 것 처럼
+        (그렇지만 로그인 컴포넌트 한켠에 들어가있다.)
+
+    이것을 방지하기위해, "리액트 포털"을 사용한다.
+
+    "리액트 포털"은, "원하는 공간"에서, "원하는 JSX코드로 만든 컴포넌트"를 렌더하는것
+
+        ** Modal 을 띄우면, "컴포넌트 함수의 한켠"이 아니고, body의 직계 자식이 되도록, 만들 수 있다.
+
+
+13. "리액트 포털"을 통해, 오버레이 컨텐츠를 표현하기(Modal 등 화면을 덮는 오버레이)
+
+    [포털을 사용하기에 필요한것] =>  "컴포넌트", "컴포넌트를 렌더할 장소"
+
+
+    1) 기존의 Modal
+
+        1. 모달을 만든다.
+        2. 사용할 곳에서, modal 을 띄우거나, 제거하는 함수를 만든다.
+        3. 모달 컴포넌트로 함수 포인터를 넘겨, 그곳에서도, 띄우거나, 제거할 수 있게 만든다. 
+
+            < Modal 사용할 곳>
+
+                import { useState } from "react";
+                import Modal from "./components/UI/Modal";
+
+                export default function App() {
+                    const [modal, setModal] = useState(false);
+                    
+    -               function toggleModal() {
+                        setModal((prev) => !prev);
+                    }
+
+                    return (
+                        <div className="App">
+                            <button onClick={toggleModal}> 모달 띄우기</button>
+    -                       {modal && <Modal closeModal={toggleModal} />}
+
+                            ...
+
+            < Modal >
+
+                import styles from "./Modal.module.css";
+
+                function Modal(props) {
+    -               const { closeModal } = props;
+
+                    return (
+                        <div className={styles.modal}>
+    -                       <div className={styles.backDrop} onClick={closeModal}></div>
+    -                       <div className={styles.modalContent} onClick={closeModal}>
+                                <h1> 이것은 Modal</h1>
+                                <h2> 모달이 띄워졌습니다. 아무곳이나 눌러 제거하세요</h2>
+                            </div>
+                        </div>
+                    );
+                }
+                export default Modal;
+
+
+
+    2) 포탈을 사용한 Modal
+
+        1. 모달을 만든다.
+        2. 모달을 만들때, 한 컴포넌트 함수에 전부 넣지 말고, "한 파일"에 "여러 컴포넌트 함수"를 만들어, "분리시킨다."
+        3. index.html 파일에, "modal 용 root" 를 만든다. (id로 DOM 에 접근해 안착시키므로, id 를 잘 적어준다.)
+        4. "react-dom"에 접근하여 하여, "createPortal()" 메서드를 import한다
+        5. "createPortal()" 을 사용하여, "modal 용 root" 에서 "렌더되게 만든다".
+
+        6. props 는 "실행하는곳" -> "Modal" -> "Modal 안의 여러 컴포넌트" 로 props drilling 한다.
+
+
+
+        < index.html > ======================================================================
+
+                ...
+            <body>
+                <noscript>You need to enable JavaScript to run this app.</noscript>
+-               <div id="root-modal-backdrop"></div>
+-               <div id="root-modal-content"></div>
+                <div id="root"></div>
+            </body>
+            </html>
+
+        < Modal 사용 할 곳> ======================================================================
+        
+            import { useState } from "react";
+            import Modal from "./components/UI/Modal";
+
+            export default function App() {
+                const [modal, setModal] = useState(false);
+                
+-                   function toggleModal() {
+                    setModal((prev) => !prev);
+                }
+
+                return (
+                    <div className="App">
+                        <button onClick={toggleModal}> 모달 띄우기</button>
+-                       {modal && <Modal closeModal={toggleModal} />}
+
+                        ...
+
+
+        < Modal > ======================================================================
+
+                import styles from "./Modal.module.css";
+-               import { createPortal } from "react-dom";                                   // createPortal 을 import
+
+-               function ModalBackDrop(props) {                                             // 각각의 파트를 분리 (선택사항)
+                    const { closeModal } = props;
+                    return <div className={styles.backDrop} onClick={closeModal}></div>;
+                }
+
+-               function ModalContent(props) {                                               // 각각의 파트를 분리 (선택사항)
+                    const { closeModal } = props;
+                    return (
+                        <div className={styles.modalContent} onClick={closeModal}>
+                            <h1> 이것은 Modal</h1>
+                            <h2> 모달이 띄워졌습니다. 아무곳이나 눌러 제거하세요</h2>
+                        </div>
+                    );
+                }
+
+                function Modal(props) {
+                    const { closeModal } = props;
+
+                    return (
+                        <div>
+-                           {createPortal( <ModalBackDrop closeModal={closeModal} /> , document.getElementById("root-modal-backdrop") )}
+-                           {createPortal( <ModalContent closeModal={closeModal} /> , document.getElementById("root-modal-content") )}
+                        </div>
+                    );
+                }
+
+                export default Modal;
+
+            ==> [createPortal] 은, [첫번째 인자]로, 렌더될 "컴포넌트 함수(렌더 된 형태)"를 받고, [두번째 인자]로, "컴포넌트를 렌더할 장소" 를 받는다.
+
+            ==> "App.js 에서, Modal 을 실행시키면", "Modal" 은 각 파트(혹은 뭉쳐진 하나의 파트)를 "portal 하여, index.html 의 root div 에서 실행시킨다".
+
+            ==> "props"는 "App.js 에서 Modal 에만 전달"했으므로, "ModalContent" 와 "ModalBackDrop" 은 "Modal 에서 props 를 받아 사용"된다.
+
+
+            
+
+14. useEffect를 이용하여, 디바운싱을 만들기 with "클린업함수", Check Validation
+
+[목적] : "중간에 타자를 치다가, 멈추면 그 이후에, Validation Check 를 하게 한다."
+        : "타이핑 중간에는 Validation Check 를 하지 않는다."
+        
+1) setTimeout 을 이용하여, 몇 초 후에, state에 기록되게 한다.
+
+2) useEffect에, 종속성을 추가하여, setTimeout 함수가, 조건부 실행되게 한다.
+
+3) 만약 중간에, "시간이 다되기전, 새로운 setTimeout이 시작되게 되면(다시 타이핑을 시작하면)",
+    "클린업함수" 를 이용하여, "setTimeout 의 흘러가던 시간을 reset"한다.
+
+    => 결국 "중간에 멈추지 않으면, setTimeout의 시간은 다시 reset 되고", 최종적으로 한번만 "setTimeout의 콜백함수가 실행되게 만드는 것"이다.
+
+    import { useEffect, useState } from "react";
+
+    function Practice() {
+        const [name, setName] = useState("name");
+
+        function nameChangeHandler(e) {
+            setName(() => e.target.value);
+        }
+
+        useEffect(() => {
+            const setTime = setTimeout(() => {
+                if (name == "ms") {
+                    console.log("correct!");
+                } else {
+                    console.log("wrong!");
+                }
+            }, 2000);
+
+            return () => {
+                clearTimeout(setTime);
+            };
+        }, [name]);
+
+        return (
+            <div>
+                <input
+                    type={"text"}
+                    value={name}
+                    onChange={(e) => nameChangeHandler(e)}
+                />
+            </div>
+        );
+        }
+
+    export default Practice;
+
+
+
+
+

@@ -42,10 +42,18 @@ function ExpenseForm(props) {
     }));
   }
 
+  const ms = true;
+  let dynamaicStyle;
+  if (ms) {
+    dynamaicStyle = "red";
+  } else {
+    dynamaicStyle = "blue";
+  }
+
   return (
     <form className={styles.maindiv}>
       <div className={styles.new_expense_controls}>
-        <label> Title </label>
+        <label className={styles[dynamaicStyle]}> Title </label>
         <input
           type={"text"}
           value={userInput.title}

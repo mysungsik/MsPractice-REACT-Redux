@@ -13,10 +13,20 @@
 8. props 넣는 것도 똑같다.
 9. wrapper 로 감싸는 것(Layout or Card) 도 똑같다.
 10. 컴포넌트 함수를 "표현식인 화살표 함수로 만들 수도 있는 것도 같다".
+11. 컴포넌트 함수에서 style 관리하기
+12. 컴포넌트 함수에서 동적 style 관리하기
+13. [디버깅] Crome DevTool 에서, 소스, 파일 위치 들어가서, "중단점 설정" 후, "기능을 실행" 하여, 한줄한줄 읽어가며 디버깅 가능
+14. [디버깅] Crome App 에서, "React Dev Tools" 를 다운받아, 사용해보기
+15. localStorage 에 접근하기 (cookie 처럼)
+16. useEffct의 의존성은 여러개를 추가해도 된다.
+
+22. useEffect를 이용하여, 디바운싱을 만들기 with "클린업함수", Check Validation
 
 <차이점>
 
 1. 페이지의 유무
+2. Router 의 유무
+3. SSR 의 유무
 
 <설정>
 
@@ -29,6 +39,10 @@
 2. 리액트는 절대 반복(재평가)하지 않는다.
 3. state 는 "모든 컴포넌트 함수를" "재평가 시킨다."
 4. State 끌어올리기
+5. 무상태 컴포넌트 = 프레젠테이셔널 컴포넌트 = dumb 컴포넌트
+6. JSX 가 반드시, 하나의 root Element 로 묶여야 하는 이유
+7. useRef 로 조작하는 것이 좋지 않은 이유 (읽는 것 제외하고)
+
 
 
 
@@ -71,6 +85,376 @@
     "Nextjs 에서는 app.js 에서 넣었따."
 
 10. 컴포넌트 함수를 "표현식인 화살표 함수로 만들 수도 있는 것도 같다".
+
+11. 컴포넌트 함수에서 style 관리하기
+    
+    <label style={{ color: "red", fontSize: "40px" , ...}}> Title </label>
+
+12. 컴포넌트 함수에서 동적 style 관리하기
+
+    <label style={{ color: 조건 ? "red" : "blue" }}> Title </label>
+
+13. [디버깅] Crome DevTool 에서, 소스, 파일 위치 들어가서, "중단점 설정" 후, "기능을 실행" 하여, 한줄한줄 읽어가며 디버깅 가능
+
+14. [디버깅] Crome App 에서, "React Dev Tools" 를 다운받아, 사용해보기
+
+    : 사용하면, 개발자탭에서, 가장 우측에, component 와 profile 이 활성화된다.
+
+        component 를 들어가면 오로지 React Component 만 보인다. => 모든 DOM 이 보이는 element 탭과 달리, 
+        
+        React와 관련된 것만 보여서 디버깅하기 쉽다.
+
+            Hook, function, State 등...
+
+15. localStorage 에 접근하기 (cookie 처럼), 접근하여 아주아주 간단한 로그인 구현
+
+    : 일반적으로 "저장"은, "DB", "localStorage", "cookie"  가 대표적이다.
+    
+        DB 는 많이 해보았고,
+        cookie 도, 인증을 위해 써보았다.
+
+        "localStorage" 도 "cookie 처럼 클라이언트에 저장가능한 저장소"이며, 
+
+        localStorage.메서드 로 접근한다.
+
+
+        <코드> ==============================
+
+            localStorage.setItem("name","vlaue") => 저장가능한
+            localStorage.getItem("name")        => 값 가져오기
+            localStorage.removeItem("name")     => 값 제거하기
+
+                ...
+        
+        <총 코드>
+
+                function Login() {
+                    const [isLogin, setIsLogin] = useState(false);
+                
+                    function loginHandler(e) {
+                        e.preventDefault();
+        
+-                       localStorage.setItem("Login", "1");
+                        setIsLogin(true);
+                    }
+                
+                    useEffect(() => {
+-                       const storedUserLogin = localStorage.getItem("Login");
+        
+                        if (storedUserLogin === "1") {
+                            setIsLogin(true);
+                        } else {
+                            setIsLogin(false);
+                        }
+                    }, []);
+                
+                    function logOutHandler(e) {
+                        e.preventDefault();
+                
+-                       localStorage.removeItem("Login");
+                        setIsLogin(false);
+                    }
+                
+                    return (
+                        <div>
+                            <button onClick={loginHandler}> 로그인 </button>
+                            <button onClick={logOutHandler}> 로그아웃</button>
+                            {isLogin && <h1> 로그인되었습니다.</h1>}
+                        </div>
+                    );
+                }
+                export default Login;
+                
+16. "리액트 포털"이란?
+
+    "Modal" 같은 "오버레이" 들은, 사실상,해당 HTML 과는 조금 다른 곳에서 실행되어어한다.
+
+    전혀 다른 종류의 컴포넌트이면서, 화면을 분리시키기도 하고, "연관이 전혀 없음에도 한 컴포넌트 안에 같이 있을 수도 있다."
+
+    마치 로그인 성공시 나오는 Modal 이, 로그인과는 전혀 관계 없는 컴포넌트 인 것 처럼
+        (그렇지만 로그인 컴포넌트 한켠에 들어가있다.)
+
+    이것을 방지하기위해, "리액트 포털"을 사용한다.
+
+    "리액트 포털"은, "원하는 공간"에서, "원하는 JSX코드로 만든 컴포넌트"를 렌더하는것
+
+        ** Modal 을 띄우면, "컴포넌트 함수의 한켠"이 아니고, body의 직계 자식이 되도록, 만들 수 있다.
+
+
+17. "리액트 포털"을 통해, 오버레이 컨텐츠를 표현하기(Modal 등 화면을 덮는 오버레이)
+
+    [포털을 사용하기에 필요한것] =>  "컴포넌트", "컴포넌트를 렌더할 장소"
+
+
+    1) 기존의 Modal
+
+        1. 모달을 만든다.
+        2. 사용할 곳에서, modal 을 띄우거나, 제거하는 함수를 만든다.
+        3. 모달 컴포넌트로 함수 포인터를 넘겨, 그곳에서도, 띄우거나, 제거할 수 있게 만든다. 
+
+            < Modal 사용할 곳>
+
+                import { useState } from "react";
+                import Modal from "./components/UI/Modal";
+
+                export default function App() {
+                    const [modal, setModal] = useState(false);
+                    
+    -               function toggleModal() {
+                        setModal((prev) => !prev);
+                    }
+
+                    return (
+                        <div className="App">
+                            <button onClick={toggleModal}> 모달 띄우기</button>
+    -                       {modal && <Modal closeModal={toggleModal} />}
+
+                            ...
+
+            < Modal >
+
+                import styles from "./Modal.module.css";
+
+                function Modal(props) {
+    -               const { closeModal } = props;
+
+                    return (
+                        <div className={styles.modal}>
+    -                       <div className={styles.backDrop} onClick={closeModal}></div>
+    -                       <div className={styles.modalContent} onClick={closeModal}>
+                                <h1> 이것은 Modal</h1>
+                                <h2> 모달이 띄워졌습니다. 아무곳이나 눌러 제거하세요</h2>
+                            </div>
+                        </div>
+                    );
+                }
+                export default Modal;
+
+
+
+    2) 포탈을 사용한 Modal
+
+        1. 모달을 만든다.
+        2. 모달을 만들때, 한 컴포넌트 함수에 전부 넣지 말고, "한 파일"에 "여러 컴포넌트 함수"를 만들어, "분리시킨다."
+        3. index.html 파일에, "modal 용 root" 를 만든다. (id로 DOM 에 접근해 안착시키므로, id 를 잘 적어준다.)
+        4. "react-dom"에 접근하여 하여, "createPortal()" 메서드를 import한다
+        5. "createPortal()" 을 사용하여, "modal 용 root" 에서 "렌더되게 만든다".
+
+        6. props 는 "실행하는곳" -> "Modal" -> "Modal 안의 여러 컴포넌트" 로 props drilling 한다.
+
+
+
+        < index.html > ======================================================================
+
+                ...
+            <body>
+                <noscript>You need to enable JavaScript to run this app.</noscript>
+-               <div id="root-modal-backdrop"></div>
+-               <div id="root-modal-content"></div>
+                <div id="root"></div>
+            </body>
+            </html>
+
+        < Modal 사용 할 곳> ======================================================================
+        
+            import { useState } from "react";
+            import Modal from "./components/UI/Modal";
+
+            export default function App() {
+                const [modal, setModal] = useState(false);
+                
+-                   function toggleModal() {
+                    setModal((prev) => !prev);
+                }
+
+                return (
+                    <div className="App">
+                        <button onClick={toggleModal}> 모달 띄우기</button>
+-                       {modal && <Modal closeModal={toggleModal} />}
+
+                        ...
+
+
+        < Modal > ======================================================================
+
+                import styles from "./Modal.module.css";
+-               import { createPortal } from "react-dom";                                   // createPortal 을 import
+
+-               function ModalBackDrop(props) {                                             // 각각의 파트를 분리 (선택사항)
+                    const { closeModal } = props;
+                    return <div className={styles.backDrop} onClick={closeModal}></div>;
+                }
+
+-               function ModalContent(props) {                                               // 각각의 파트를 분리 (선택사항)
+                    const { closeModal } = props;
+                    return (
+                        <div className={styles.modalContent} onClick={closeModal}>
+                            <h1> 이것은 Modal</h1>
+                            <h2> 모달이 띄워졌습니다. 아무곳이나 눌러 제거하세요</h2>
+                        </div>
+                    );
+                }
+
+                function Modal(props) {
+                    const { closeModal } = props;
+
+                    return (
+                        <div>
+-                           {createPortal( <ModalBackDrop closeModal={closeModal} /> , document.getElementById("root-modal-backdrop") )}
+-                           {createPortal( <ModalContent closeModal={closeModal} /> , document.getElementById("root-modal-content") )}
+                        </div>
+                    );
+                }
+
+                export default Modal;
+
+            ==> [createPortal] 은, [첫번째 인자]로, 렌더될 "컴포넌트 함수(렌더 된 형태)"를 받고, [두번째 인자]로, "컴포넌트를 렌더할 장소" 를 받는다.
+
+            ==> "App.js 에서, Modal 을 실행시키면", "Modal" 은 각 파트(혹은 뭉쳐진 하나의 파트)를 "portal 하여, index.html 의 root div 에서 실행시킨다".
+
+            ==> "props"는 "App.js 에서 Modal 에만 전달"했으므로, "ModalContent" 와 "ModalBackDrop" 은 "Modal 에서 props 를 받아 사용"된다.
+
+
+
+                
+18. useEffct의 의존성은 여러개를 추가해도 된다.
+
+    const [name,setName] = useState()
+    const [password,setPassword] = useState()
+
+    useEffect(()=>{
+        ...
+    },[ name, password ... 여러개 추가 가능])
+
+19. useEffect의 의존성은, 상위항목으로부터 받아온 값도 가능하다
+
+    props 로 "상위 컴포넌트에서, 바뀐것을 받았다면",
+    그것또한, 종속성으로 추가 할 수 있다.
+
+20. 디바운싱 (디바운스 = 그룹화)
+
+    "디바운싱"이란, 계속해서 변경되는 state 가 있다고 생각해보자
+
+        예를들면, "id를 입력중인 상황"
+
+    유저는, 1초에 대략 5~10자 정도 되는 타자를 칠 것이다.
+
+        변경되는 state는, 유저가 키를 누를때마다 변경되고, 이는 사실 불필요한 state 의 변경일것이다.
+
+    그래서 "디바운싱"을 한다.
+
+    유저가 타자를 다 치고 나서, "1초정도 쉰다면", 그때, "state" 를 기록하는 것이다.
+
+    움직일때는 행동을 하지 않고, 움직임이 끝나면, 행동한다.
+
+    움직임을 그룹화한다. 해서 "디바운싱이다."
+
+21. useEffect의 클린업 프로세스
+
+        useEffect 를 사용할때, "반환하는 함수"를 만들 수 있다.(화살표 함수도, 선언문 함수도 괜찮다.)
+
+        이 함수를 "클린업 함수" 라고 부른다.
+
+        [클린업 함수의 실행 타이밍]
+
+            1. 클린업 함수는, useEffect 내부의 함수가 "실행되기 직전" 에 실행된다.
+            2. "첫번째 useEffect 내부의 함수가 실행된 이후"부터 실행이 시작된다.
+
+        [코드]
+        
+            const [name, setName] = useState()
+
+            useEffect(()=>{
+
+                ...
+
+                return ()=>{
+                    "클린업함수 실행문"
+                    console.log("reset!")
+                }
+
+            },[name])
+
+        [예시]
+            
+            "시작하고나면, useEffect 함수가 한번 실행"된다.
+            "이후, 타이핑을 하게되면, name 이 변화"한다.
+            "name 이 입력되기 직전에 클린업 함수가 실행"된다.
+
+        [로그]
+
+            name
+
+            reset!
+            name
+
+            reset!
+            name
+
+            ...
+
+
+22. useEffect를 이용하여, 디바운싱을 만들기 with "클린업함수", Check Validation
+
+    [목적] : "중간에 타자를 치다가, 멈추면 그 이후에, Validation Check 를 하게 한다."
+            : "타이핑 중간에는 Validation Check 를 하지 않는다."
+            
+    1) setTimeout 을 이용하여, 몇 초 후에, state에 기록되게 한다.
+
+    2) useEffect에, 종속성을 추가하여, setTimeout 함수가, 조건부 실행되게 한다.
+
+    3) 만약 중간에, "시간이 다되기전, 새로운 setTimeout이 시작되게 되면(다시 타이핑을 시작하면)",
+        "클린업함수" 를 이용하여, "setTimeout 의 흘러가던 시간을 reset"한다.
+
+        => 결국 "중간에 멈추지 않으면, setTimeout의 시간은 다시 reset 되고", 최종적으로 한번만 "setTimeout의 콜백함수가 실행되게 만드는 것"이다.
+
+        import { useEffect, useState } from "react";
+
+        function Practice() {
+            const [name, setName] = useState("name");
+
+            function nameChangeHandler(e) {
+                setName(() => e.target.value);
+            }
+
+            useEffect(() => {
+                const setTime = setTimeout(() => {
+                    if (name == "ms") {
+                        console.log("correct!");
+                    } else {
+                        console.log("wrong!");
+                    }
+                }, 2000);
+
+                return () => {
+                    clearTimeout(setTime);
+                };
+            }, [name]);
+
+            return (
+                <div>
+                    <input
+                        type={"text"}
+                        value={name}
+                        onChange={(e) => nameChangeHandler(e)}
+                    />
+                </div>
+            );
+            }
+
+        export default Practice;
+
+
+
+23. useReducer() 사용해보기
+
+    : 강력한 State 관리도구
+
+
+
+
+
+
 
 
 <차이점>
@@ -156,5 +540,29 @@
         ** UI 를 조작하려면, "재평가 해야하고", "재평가하려면 STATE 가 필요함을 인지하자"
 
     "반대" : 상태 유지 컴포넌트, smart 컴포넌트
+
+6. JSX 가 반드시, 하나의 root Element 로 묶여야 하는 이유
+
+    JSX 는 React.createElement 로 반환된다.
+    그곳에서 하나의 값만 반환되기 때문에, 그렇다.
+
+7. useRef 로 조작하는 것이 좋지 않은 이유 (읽는 것 제외하고)
+
+        const nameRef = useRef()
+
+        const nameData = nameRef.current.value      // 읽기
+        nameRef.current.value = ""                  // 쓰기
+
+        <input type="text" ref=nameRef>             // 연결
+
+    : useRef 는 DOM 을 직접 읽는다.
+        이는 "React"에 의해 "DOM 이 조작되는 것이 아니라", "실제 DOM 이 조작된다."
+
+        이것은 REACT 에서 좋지 않은 결과를 일으킬 수 있으니, 쓰는 작업은 지양해야한다.
+
+
+
+
+
 
     

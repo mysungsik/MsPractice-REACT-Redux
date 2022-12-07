@@ -1,0 +1,25 @@
+.backDrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(86, 86, 86, 0.772);
+  z-index: 2;
+}
+.modalContent {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30rem;
+  height: 30rem;
+  color: white;
+  background-color: black;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+  z-index: 3;
+}
