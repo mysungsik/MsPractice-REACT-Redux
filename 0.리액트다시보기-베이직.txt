@@ -17,10 +17,18 @@
 12. 컴포넌트 함수에서 동적 style 관리하기
 13. [디버깅] Crome DevTool 에서, 소스, 파일 위치 들어가서, "중단점 설정" 후, "기능을 실행" 하여, 한줄한줄 읽어가며 디버깅 가능
 14. [디버깅] Crome App 에서, "React Dev Tools" 를 다운받아, 사용해보기
-15. localStorage 에 접근하기 (cookie 처럼)
-16. useEffct의 의존성은 여러개를 추가해도 된다.
-
+15. localStorage 에 접근하기 (cookie 처럼), 접근하여 아주아주 간단한 로그인 구현
+16. "리액트 포털"이란?
+17. "리액트 포털"을 통해, 오버레이 컨텐츠를 표현하기(Modal 등 화면을 덮는 오버레이)
+18. useEffct의 의존성은 여러개를 추가해도 된다.
+19. useEffect의 의존성은, 상위항목으로부터 받아온 값도 가능하다
+20. 디바운싱 (디바운스 = 그룹화)
+21. useEffect의 클린업 프로세스
 22. useEffect를 이용하여, 디바운싱을 만들기 with "클린업함수", Check Validation
+23. useReducer HOOK 을 언제 사용하는가?
+24. useReducer HOOK 사용해보기
+25. Context 사용하기
+26. store 의 Context 안에서, 모든 공급이 이루어지게 만들기 [가독성을 위해, 공급하는 value 를 "공급하는곳에서 적지 않기 위하여"] 
 
 <차이점>
 
@@ -446,16 +454,430 @@
 
 
 
-23. useReducer() 사용해보기
+23. useReducer HOOK 을 언제 사용하는가?
 
-    : 강력한 State 관리도구
+    : 강력한 State 관련 도구로
+
+        3개의 state 가 있을 때,
+
+        "[ 1 ] 과 [ 2 ] 의 state를 사용"해, "[ 3 ]의 state 를 업데이트" 한다고 생각해보자.
+
+        업데이트 과정에서, [1] 혹은 [2] 가 최신화가 되지 않아 있을 수도 있다.
+
+        이때 우리는, "1과 2, 그리고 3을 한 항목으로 묶을 필요가 있다."
+
+        방법은 두가지이다.
+
+        1) 객체형태의 State 를 사용하여 한 State로 묶는다.
+        2) "useReducer"를 사용한다.
+
+            객체형태는, 간단하면 사용가능하다. 2,3가지 정도의 데이터는 묶을 만 하다
+            "매우매우매우매우 복잡하고 많은 형태로 묶인 State 를 사용해야 할때" 그때, "useReducer"를 사용한다.
 
 
+24. useReducer HOOK 사용해보기
+        :이 Hook 함수를 사용하면 "컴포넌트의 상태 업데이트 로직"을 "컴포넌트에서 분리시킬 수 있다". 
+            "상태 업데이트 로직(리듀서함수)"을 컴포넌트 바깥에 작성 할 수도 있고, 심지어 다른 파일에 작성 후 불러와서 사용 할 수도 있지요
+
+    [기본]
+    
+        << 1. 리듀서함수의 정의 >>
+
+            function reducerFn(state, action){          => 리듀서함수는, "현재상태"와 "액션"을 파라미터로 받아와서 "새로운 상태를 반환해주는 함수"
+                retrun nextState                        => 리듀서 함수의 반환값은 곧, "새로운 상태"
+            }
+
+                * state : 현재 상태
+                * action : "type" 값이 존재하고, "나머지는 맘대로 무엇이든 넣을 수 있는", "객체형태"의 코드
+                    type 은 보통, "대문자", "_" 를 사용한다.
 
 
+                <리듀서 함수 예시> ============================================================
+
+                    => "취할 모든 액션을 정의한다."
+
+                    function reducer(state, action) {           // 무엇이든, "action.type"을 확인하여, "원하는 action"을 취하게한다.
+                        if (action.type == "INCREMENT") {      
+                            return state + 1;                    // 반환에는, "state" 를 변화시킨다.
+                        }    
+                        if(action.type == "DECREMENT")  {
+                            return state - 1;
+                        }   
+                    }
+
+        << 2. 컴포넌트 함수 내에서, 정의한 "리듀서함수"를 가져와서 사용하기 >>
+
+                function Counter(){
+                    const  [number, dispatch] = useReducer(reducerFn, 0);
+
+                    function OnIncrease(){
+                        dispatch({type: 'INCREMENT' })
+                    }
+
+                    function OnDecrease(){
+                        dispatch({type: 'DECREMENT' })
+                    }
+
+                    retrun (
+                        <div>
+                            <button onClick={OnIncrease}> +1 </button>
+                            <button onClick={OnDecrease}> -1 </button>
+                        </div>
+                    )
+                }
+
+        << 3. 결합 >>
+
+                import React, { useReducer } from 'react';
+
+                function reducer(state, action) {
+                    switch (action.type) {
+                        case 'INCREMENT':
+                            return state + 1;
+                        case 'DECREMENT':
+                            return state - 1;
+                        default:
+                            return state;
+                    }
+                }
+
+                function Counter() {
+                    const [number, dispatch] = useReducer(reducer, 0);
+
+                    const onIncrease = () => {
+                        dispatch({ type: 'INCREMENT' });
+                    };
+
+                    const onDecrease = () => {
+                        dispatch({ type: 'DECREMENT' });
+                    };
+
+                    return (
+                        <div>
+                            <h1>{number}</h1>
+                            <button onClick={onIncrease}>+1</button>
+                            <button onClick={onDecrease}>-1</button>
+                        </div>
+                    );
+                }
+
+                export default Counter;
 
 
+        [결론]
+            : useReducer는 리듀서함수, 초기값, 초기함수 를 파라미터로 갖는다
 
+                리듀서함수는, state와, action 을 파라미터로 갖는다.
+
+                리듀서함수는, "반환값으로" , "변할 State 를 갖는다"            [ useState 의 setValue() 처럼]
+
+                리듀서함수는, "실행 될 action"을 "전부 적고", "type" 에 따라, "다른 action을 취하도록 한다". 
+
+                리듀서함수의 action(실행함수) 를 사용하기 위해, "dispatch" 명령어로, "action 안에 정의한 객체 프로퍼티 type 을 가져온다."   [type == id(불러올때 쓸 이름)]
+
+                "dispatch"로 "특정 type을 정하여", [리듀서 함수의 action(실행함수)를 불러오는 것]이다.
+
+                "action 이 실행"되면, "type(action)마다 정해진, 다른 return 값" 이, "새로운 상태"가 된다.
+
+            
+        [추가]  - state는 "객체"를 보통 갖는다
+
+-           : state는 "객체"를 보통 갖는다.
+
+                function reducerFn(state, action){
+                    if(action.type == "GET_INFO"){
+                        retrun { name : "ms", age : 35 }        // "객체값을 갖을 수 다."
+                    }
+                    if(action.type == "DELETE_INFO")
+                        retrun { name : null, age : null }
+                }
+
+                function GetUserInfo(){
+                    const [userInfo, dispatch] = useReducer(reducerFn, {name : "", age : null});
+                }
+                
+-       [추가] - useEffct의 종속성으로 활용할 때
+
+                function GetUserInfo() {
+                    const [userInfo, dispatch] = useReducer(userInfoReducer, {
+                        name: "",
+                        age: null,
+                    });
+                    
+                        일때,
+                    
+                    useEffect(()=>{
+                        ...
+                    },[ userInfo ]) 	// 이렇게 사용하지 않는다.
+                    
+                    
+                    <개선> 
+                    
+                    useEffect(()=>{
+                        ...
+                    },[ userInfo.name ]) 	// 프로퍼티를 뽑아 사용한다.
+                
+
+25. Context 사용하기
+    
+    : 앱 전반에 걸쳐, 같은 데이터를 공유하는 코드
+
+    "1) createContext"
+        :   createContext는, context 를 만들어주는 react의 빌트인 메서드이다.
+
+        [const myContext = createContext(defaultValue)]
+                    
+            * defaultValue는, "자동완성" 을 위해 사용한다고 해도 무방하다.
+                Provider 를 통해, "아무값도 넘기지 않으면", defaultValue 가 사용된다.
+
+    "2) context.Provider"
+
+        : Conetext.Provider 는, "context 를 구독하는 컴포넌트"들에게, "context 의 변화를 알린다".
+
+        [myContext.Provider value={값}]
+
+
+    <기본적인 사용>
+
+        1) "context" 를 만든다.
+        2) "context를 공급할 곳" 에서, "만든 context를 import" 한다.
+        3) App.js 처럼, "전방위적으로 앱을 감싸는 컴포넌트"를 "context 로 감싼다."
+        4) 단 감쌀때는, "context 변화를 알리는, context.Provider" 로 "감싸야"한다.  [공급한다.]
+
+        
+            <context>
+                import { createContext } from "react";
+
+    -           const AuthContext = createContext({
+                    isLoggedIn: false,
+                });
+
+    -           export default AuthContext;
+
+            <App.js>
+
+    -           import AuthContext from "../store/..."
+
+                    ...
+
+                    <div className="App">
+    -                   <AuthContext.Provider value={ {isLoggedIn: false} }>
+                            <Login />
+                            <NewExpenseon SaveChildData={saveExpenseDataHandler} />
+                            <Expense fromNewExpense={expensData} yearValue={year} />
+    -                   </AuthContext.Provider>
+                    </div>
+
+
+            ** "기본 값 (defaultValue) 는 공급자가 없을때나, 유용한 것"이다. "Provider 가 전달하는 value 와는 전혀 관계 없다". 다만, "자동완성기능"을 위해 필요하다
+            ** Provder 는 value 를 하위 항목들에게 "공급"한다. "공급된 value" 는, "하위항목들도 접근하여 사용이 가능"하다.
+            ** 지금은  <AuthContext.Provider value={ {isLoggedIn: false} }> 처럼 고정된 value 를 공급하지만, 
+                App.js 에서 "State" 를 사용해, "동적으로 공급" 할 수도 있다.
+
+    < useContext 를 이용한 "구독" >
+
+        1) useContext 를 import 한다.
+        2) store 에 담겨있는 context 객체를 import 한다.
+        3) "useContext" 를 이용하여, "context를 구독"한다
+        4) context 를 사용한다.
+
+            < Login Component >
+
+-               import useContext from "react"
+-               import AuthContext from "../store/.."
+
+                function Login(){
+-                   const ctx = useContext(AuthContext)
+
+                    retrun(
+                        <div>
+-                           {ctx.isLoggedIn}
+                        </div>
+                    )
+                }
+
+    [반드시 알고있어야 할 것]**
+
+        ** 컨텍스트를 Provide 하는 "Provider는", "context 에 있는 isLoggedIn 을 전달 하는 것이 아니다."
+            스스로 적은 "value" 객체를 전달하는 것이다.
+
+           "이 말인 즉, 굳이 store 폴더에서, defaultValue 를 적지 않아도, "
+                Provider의 value 를 통해, "아무 값(혹은 함수)이나 더 전달 할 수 있다는 것"이다.
+
+                    [context 에서 정의하지 않아서, 자동완성은 안되겠지만]
+
+            ** 이는 보통, "context의 상태(데이터)를 변화하는 함수들을 더 전달" 할것이다. 
+                
+
+            <App.js>
+
+    -           import AuthContext from "../store/..."
+                    const [isLogin, setIsLogin] = useState(false)
+
+                    ...
+                    function changeState (...){
+                        setIsLogin(...)
+                    }
+
+                    <div className="App">
+    -                   <AuthContext.Provider value={ {isLoggedIn: isLogin, onClick={changeState}} }>  
+                            <Login />
+                            <NewExpenseon SaveChildData={saveExpenseDataHandler} />
+                            <Expense fromNewExpense={expensData} yearValue={year} />
+    -                   </AuthContext.Provider>
+                    </div>
+
+            ** 사용하는 곳에서 "useContext" 를 사용하여, "함수를 받아 사용"한다면, "App.js" 에서 정의된 함수이므로, 
+                App.js 의 "isLogin State" 가 변하고, 이는 "공급할 isLoggedIn 의 value 가 바뀔것"이고
+                "이는 구독하여 사용하는 모든 곳에 있는  value 가 바뀔것"이다.
+
+
+26. store 의 Context 안에서, 모든 공급이 이루어지게 만들기 [가독성을 위해, 공급하는 value 를 "공급하는곳에서 적지 않기 위하여"] 
+
+    < 기본사용 메커니즘 >
+        
+        1. store에 context를 만들어, App.js 에 .Proivder 를 이용해, 하위 컴포넌트들을 감싸, value 를 넘긴다.
+
+        2. value 는, App.js 의 .Proivder 안에서 정의되며, App.js의 함수와 State를 모든 앱에 걸쳐 공급한다.
+
+        3. App.js 에서 정의된 함수와 State 를 넘겨받은 하위 컴포넌트들은, useState 를 사용하여, vlaue 에 접근해, value 를 사용한다.
+
+        ==> value 에 넣어 공급할, State와, 함수들을 App.js 에서 정의하기에, 복잡해진다.
+
+    < App.js(공급할곳) 에서 State와, 함수들을 정의하지 않고, Store의 Context에서 모든 것을 처리해보자>
+
+
+        <store/AuthContext.js> ================================================================================
+
+            import { createContext, useState } from "react";
+
+            const AuthContext = createContext({
+                isLoggedIn: false,
+                loginHandler: ()=>{},
+                logoutHandler:()=>{}
+            });
+
+            export function AuthContextProvider(props) {
+                const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+                function loginHandler() {
+                    setIsLoggedIn(true);
+                }
+                function logoutHandler() {
+                    setIsLoggedIn(false);
+                }
+
+                const context = {
+                    isLoggedIn: isLoggedIn,
+                    loginHandler: loginHandler,
+                    logoutHandler: logoutHandler,
+                };
+
+                return (
+                    <AuthContext.Provider value={context}>
+                        {props.children}
+                    </AuthContext.Provider>
+                );
+            }
+
+            export default AuthContext;
+
+        ========================================================================================================================
+
+        ==> App.js 에서 할 것을, Store의 Context 로 옮겨왔다.
+
+            1) AuthContext 를 Provide 하기위한 함수를 재정의 [AuthContextProvider]
+
+            2) 재정의한 AuthContextProvider 를 export 하고, 반환값으로, AuthContext.Proivder 에, props.children 으로,
+                모든 하위 컴포넌트에서 사용 가능하게 한다.
+
+            3) value = { {name: ..., login: ...} } 처럼 각각의 객체를 정의하지 말고,
+                context 라는 변수를 만들어, value 안에 넣어준다.
+
+                    => 실질적으로 공급되는 값들은  context 인것이다.
+                
+            4) context 안에는, "State" 와  "함수(State를 조작할)" 가 들어간다.
+
+            5) createContext 로 만든 AuthContext 안에는 defaultValue 가 들어간다.
+
+                    => defaultValue 는 단지, "자동완성"을 위한 값일 뿐이다. 어차피 Proivder를 사용한다면,
+                         defaultValue의 데이터는 필요없다.
+
+
+        < App.js > ================================================================================
+
+                : 기존에" AuthContext를 이용해, .Proivder 메서드로, 공급했다".
+                    하지만 그 일은, 이제, "AuthContextProvider" 가 대신할것이다.
+
+                    또한, App.js 에서 Provider 을 사용할 필요가 없어졌다.
+
+            ==>  전부 모이는 "index.js" 에 가서, "AuthContextProvider" 로 감싸준다.
+
+        < index.js > ================================================================================
+
+            import { AuthContextProvider } from "./store/auth-context";
+
+            const root = ReactDOM.createRoot(document.getElementById("root"));
+            root.render(
+                <AuthContextProvider>
+                    <Layout>
+                    <App />
+                    </Layout>
+                </AuthContextProvider>
+            );
+
+        < 사용할 곳 > ================================================================================
+
+                : 이제 사용할 곳에서 똑같이, "createContext로 만든, AuthContext 를 import" 하고, 
+                    "useContext" 를 이용하여, "Provider 내부에 있는 값을 사용"하면된다.
+
+            import { useContext, useState } from "react";
+            import AuthContext from "../../store/auth-context";
+
+            function UseContextPractice() {
+                const ctx = useContext(AuthContext);
+
+                function login() {
+                    ctx.loginHandler();                                     // true
+                }
+                function logout() {
+                    ctx.logoutHandler();
+                }
+                console.log(ctx.isLoggedIn);                                // false
+
+                return (
+                    <div>
+                    <button onClick={login}> 컨텍스트 로그인 </button>
+                    <button onClick={logout}> 컨텍스트 로그아웃</button>
+                    </div>
+                );
+            }
+
+            export default UseContextPractice;
+
+        
+        < 주의사항 >
+            
+            반드시 "매우매우 긴 props chain" 과 "전반적인 앱을 컨트롤하는 State"를 이용할때 (Auth, 전체 Banner 등..) 만 사용한다.
+
+            "자주 바뀌는 State" 에 관해서는 "Context" 를 사용하지 않는다! - 리액트 개발자의 공식문서
+
+            그래서 "Redux" 를 사용할것이다.
+
+                            
+
+27. HooK 들의 유의사항
+
+    1. HOOK 은 반드시 "리액트 컴포넌트"안에서 사용해야한다. 
+        리액트 컴포넌트 밖에 정의한 "리듀서 함수", "next의 SSR", "API" 등.. 다른곳은 안된다.
+
+    2. HOOK 은 반드시, "컴포넌트 함수의 최상위에 사용해야한다"
+        콜백 함수, 중첩 함수 같은, 하위 블록의 함수에서 사용이 불가능하다.
+
+    3. 하나의 의존성이라도 있는 경우, "웬만하면 useEffect를 사용"한다. 또한, 의존성에 그 값을 넣는다.
+            
+
+            
 
 <차이점>
 
@@ -560,6 +982,23 @@
 
         이것은 REACT 에서 좋지 않은 결과를 일으킬 수 있으니, 쓰는 작업은 지양해야한다.
 
+8. 디바운싱 (디바운스 = 그룹화)
+
+"디바운싱"이란, 계속해서 변경되는 state 가 있다고 생각해보자
+
+예를들면, "id를 입력중인 상황"
+
+유저는, 1초에 대략 5~10자 정도 되는 타자를 칠 것이다.
+
+변경되는 state는, 유저가 키를 누를때마다 변경되고, 이는 사실 불필요한 state 의 변경일것이다.
+
+그래서 "디바운싱"을 한다.
+
+유저가 타자를 다 치고 나서, "1초정도 쉰다면", 그때, "state" 를 기록하는 것이다.
+
+움직일때는 행동을 하지 않고, 움직임이 끝나면, 행동한다.
+
+움직임을 그룹화한다. 해서 "디바운싱이다."
 
 
 

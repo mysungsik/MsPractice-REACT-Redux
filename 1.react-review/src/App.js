@@ -3,7 +3,9 @@ import NewExpense from "./components/NewExpense-components/NewExpense";
 import { useState } from "react";
 import Modal from "./components/UI/Modal";
 import Login from "./components/Login/Login";
-import Practice from "./components/practice.js/practice";
+import Practice from "./components/practice.js/practice-useEffect";
+import GetUserInfo from "./components/practice.js/practice-useReducer";
+import UseContextPractice from "./components/practice.js/practice-context";
 
 export default function App() {
   const [expensData, setExpenseData] = useState();
@@ -25,7 +27,9 @@ export default function App() {
   console.log(year);
   return (
     <div className="App">
+      <UseContextPractice></UseContextPractice>
       <Login />
+      <GetUserInfo />
       <Practice />
       <button onClick={toggleModal}> 모달 띄우기</button>
       {modal && <Modal closeModal={toggleModal} />}
