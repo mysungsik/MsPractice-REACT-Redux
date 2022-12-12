@@ -30,6 +30,7 @@
 25. Context 사용하기
 26. store 의 Context 안에서, 모든 공급이 이루어지게 만들기 [가독성을 위해, 공급하는 value 를 "공급하는곳에서 적지 않기 위하여"] 
 
+
 <차이점>
 
 1. 페이지의 유무
@@ -50,7 +51,15 @@
 5. 무상태 컴포넌트 = 프레젠테이셔널 컴포넌트 = dumb 컴포넌트
 6. JSX 가 반드시, 하나의 root Element 로 묶여야 하는 이유
 7. useRef 로 조작하는 것이 좋지 않은 이유 (읽는 것 제외하고)
-
+8. 디바운싱 (디바운스 = 그룹화)
+9. 리액트가 작동하는 방식에 대하여
+10. App.js 처럼 상위 컴포넌트가 재평가되면, 모든 하위 자식들도 전부 재평가 및 실행 된다. "낭비를 어떻게 막을 수 없을까?"
+11. 그럼 왜? 항상 사용하지 않는가?
+12. 언제 React.memo() 를 사용하는가?
+13. React.memo() 는 "원시값의 props" 를 비교하는 데에만 적합하다.
+14. 그렇다면 함수형으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useCallback() 을 이용한다.
+15. 그렇다면 "객체나 배열" 으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useMemo() 을 이용한다.
+16. State 에 관하여
 
 
 
@@ -65,7 +74,7 @@
 3. 결국 붙여지는 곳은 메인 "App.js" 이다.
 
 4. 해당 컴포넌트만 적용받는, 기본 스타일링은 .module.css이다.
-    import "./ExpensiveItem..module.css";
+    import "./ExpensiveItem.module.css";
 
 5. 그냥 css 를 사용하면, "묶인 컴포넌트 전체가 바뀐다." 클래스네임을 확실히 지정할거면 이게 더 편하다
     import "./ExpensiveItem..css";
@@ -1001,7 +1010,250 @@
 움직임을 그룹화한다. 해서 "디바운싱이다."
 
 
+9. 리액트가 작동하는 방식에 대하여
+
+    "리액트" 는 오로지 "컴포넌트" 만 신경쓴다.
+
+        컴포넌트끼리 "props" 를 넘긴다던가 [ props 전달]
+        "context" 를 사용하여, component 의 "상태를 변화"한다던가 [ wide-data ]
+        component 가 "state" 변화에 의해 "재평가" 된다던가 [ internal-data ]
+
+        이런 것들이 변화되면, "컴포넌트를 재평가" "컴포넌트"를 re-render한다.,
+        화면에 표시해야 할 것이 있다면  리액트는, ReactDOM 에 그것을 알린다.
+
+    "리액트 DOM (Virtual DOM)" 은 "REAL DOM"에게 "현재 스냅샷과 다른것"만 비교하여, "전달"한다.
+
+    "리액트"에 의해, "비교되어 다름이 판단된 ELEMENT는" "리액트 DOM" 에게 보내지고,
+    "리액트 DOM"은, REAL DOM 을 업데이트한다
+
+    이때 "전체 REAL DOM을 re-rendering" 하는 것이 아니고, "필요한 부분(차이)만 추가, 삭제"한다.
+
+    만약 "자식이 부모의 컴포넌트에 들어있을때" 부모컴포넌트의 State 를 바꾼다면 어떻게될까.
+    "자식도 함께 재평가된다."
+
+    [이미 자식컴포넌트는, 부모컴포넌트의 일부이기 때문이다.]
+
+10. App.js 처럼 상위 컴포넌트가 재평가되면, 모든 하위 자식들도 전부 재평가 및 실행 된다. "낭비를 어떻게 막을 수 없을까?"
+
+    "React.memo()" 를 사용한다.
+
+    React.memo() 는, props 를 비교하여," props 가 변화할때만, re-render 한다"
+
+            import React from "react"
+
+            function Demo(props){
+                    ...
+            }
+            export default React.memo(Demo)
+
+11. 그럼 왜? 항상 사용하지 않는가?
+
+    props 를 비교하는 비용이 발생하기 때문이다.
+
+    props 를 저장, 비교 하는 "성능비용" 과, [컴포넌트를 re-render하는 성능비용] 을 비교했을때, 더 나은 쪽을 선택해야 하기 때문이다.
+
+12. 언제 React.memo() 를 사용하는가?
+
+    꽤나 상위 컴포넌트에 위치해서, 자식으로 있는 컴포넌트가 많을때, 
+
+    그럼에도 불구하고, 한단계 상위 컴포넌트의 props 는 거의 고정된 채로 그곳에 보낼때,
+
+    컴포넌트 트리가 이런 경일 경우
+
+        A   - AB - C - D - F ...
+            - AC - AD ...
+
+    A로 부터 오는 props 가 " AB 에서는 변화가 없고",
+                           " AC 에서만 변화가 대부분일 경우"
+    AB 는 props 의 변화가 거의 없고, 딸린 자식들이 많기 때문에, React.memo() 를 사용하면 유용한 최적화 가 될 것이다.
+
+            * 애초에 작은 App 은 사용할 필요가 없다.
+
+13. React.memo() 는 "원시값의 props" 를 비교하는 데에만 적합하다.
+
+            
+        <부모>
+            function App(){
+
+                function funA(){
+
+                }
+
+                retrun(
+                    ...
+                    <DemoA props={false}/>      // 원시값 props
+                    <DemoB props={funA}/>       // 참조값인 funnA 함수
+                )
+            }
+        
+        <자식 A>
+                
+            import React from "react"
+
+            function DemoA(props){
+                    ...
+            }
+            export default React.memo(Demo)
+
+        <자식 B>
+
+            import React from "react"
+
+            function DemoB(props){
+                    ...
+            }
+            export default React.memo(DemoB)
 
 
+    ==> 이 경우에서는, "자식 B" 는 "re-render" 된다. "심지어 함수에서 나온 값, 식이 전부 동일함에도"
 
+    [원시값과 참조값]
+
+        false === false // true
+        "hi" === "hi"   // true
+        [1,2,3] === [1,2,3]     // ?
+
+            정답은 false 이다.
+
+        왜? 배열은 "참조값"이니까.
+
+        "원시값 을 제외한 값들은 참조값을 갖는다" 대표적으로 배열, 객체 이다. 
+
+        그리고 "함수"는 "객체"이다. (자바스크립트의 1급객체)
+
+        그러므로, React.memo 는 "이전 함수", "현 함수" 를 비교하지만, 결국 "다르다" 라고 인식한다.
+
+        그러므로, React.memo() 의 props 비교에는 "원시값" 으로 넣어야만 한다.
     
+
+14. 그렇다면 "함수형"으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useCallback() 을 이용한다.
+
+    useCallback() 은 useEffct() 와 마찬가지로 종속성이 필요한 Hook 이다.
+
+    useCallback( 함수 , []) 를 사용하게 되면,
+
+        함수는 마치 "한 변수에 저장 된 것처럼" 값이 같다면, 새로 생성하지 않고 "변하지 않는 메모리주소를 갖게된다".
+
+            * 원래 안변하지만, "새로운 함수의 메모리 주소로, 새 함수를 할당하지 않는다는 말"
+
+            A 함수를 계속 돌려쓰게된다.
+
+    ==> 함수 생성시, useCallback() Hook 을 사용하게 되면, props 로 넘기더라도, 같은 함수를 가르킨다.
+
+                
+    <부모>
+        function App(){
+            const funA = useCallback(function funA(){
+                console.log("funA")
+            },[])
+
+            retrun(
+                ...
+                <DemoB props={funA}/>       // 참조값인 funnA 함수
+            )
+        }
+
+       
+
+    <자식>
+        import React from "react";
+
+        function DemoB(props) {
+            const { funA } = props;
+            console.log("this is for callback");
+
+            funA();
+
+            return <div></div>;
+            }
+
+        export default React.memo(DemoB);
+
+
+    ==> "부모" 의 "상태" 가 변하여도, "props 로 들어간 함수가 변하지 않았으므로"
+            자식인 DemoB 는 "re-render" 되지 않는다.
+    
+15. 그렇다면 "객체나 배열" 으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useMemo() 을 이용한다.
+
+    <사용 방법> : useCallback 과 비슷한 형태로 사용한다. 다만, 함수를 반환하기 위해, 함수형을 쓰는 것은 아니다.
+                : 의존성으로, 의존되는 값을 넣어주면 된다.
+
+            예시)
+                const {item} = props
+                    ...
+
+                    useMemo(()=>{
+                        return item.find(...)
+                    },[item])
+
+    <기본 사용>
+        useMemo( ()=>
+            return{
+                "배열"
+            },[])
+
+        <부모>
+            import {useMemo} from "react"
+
+            function App(){
+                const ArrayA = useMemo(()=>{
+                    return [1,2,3,4,5]
+                }, [])
+
+                retrun(
+                    ...
+                    <DemoB props={ArrayA}/> 
+                )
+            }
+
+        <자식>
+            import React from "react";
+
+            function DemoB(props) {
+                cosnt {ArrayA} = props
+
+                return <div></div>;
+            }
+
+            export default React.memo(DemoB);
+
+        ==> 배열은 참조값이므로, 생성될때마다, 다른 메모리의 주소를 갖는다.
+            그러므로, 내부 값이 같다면, 같은 메모리의 주소를 참조할 수 있도록 만들어야 하고 (위의 함수와 같이)
+
+            그것을 위해, useMemo(()=>{},[]) 를 사용한 것이다.
+
+            같은 값은 가진 배열을 props 를 넘겨주면, 그 값이 바뀌지 않을때, React.memo 에 의해, 
+            props 가 바뀌지 않은 컴포넌트는, "재평가와 실행"이 되지 않는다.
+
+            [최적화]
+
+16. State 에 관하여
+
+    : useState 는, 언제 상태를 업데이트하는가?
+
+            function Demo(){
+                const [x, setX] = useState(false)
+
+                function change(){
+                    setX(true)
+                    console.log(x)
+                }
+
+            }
+
+        => change 함수를 실행시키고 console.log() 에는 무엇이 나올까?
+            "초기상태인 false 이다."
+
+        useState 는 상태를 변화시킬때, "State 변화를 스케쥴링"한다.
+
+        여러개의 상태 변화일 경우, A -> B -> C .. 라면
+
+        "A 를 B 로 바꾸려는 스케쥴", "B 를 C 로 바꾸려는 스케쥴"을 "지정하고, 수행한다."
+
+            바꾼 이후, 컴포넌트가 전부 "재평가, 실행" 되고 나서, 그 이후, State 는 업데이트된다.
+
+        이는 "혹시 모를 스케쥴에 의해" 최신상태로 업데이트 되지 않는 것을 방지하고자,
+
+        useState 를 사용할때, 안에 함수형태로 사용하는 것이다.
+            
+            useState(()=>(...))

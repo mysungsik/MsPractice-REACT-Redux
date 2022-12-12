@@ -405,6 +405,13 @@
 -               <label className={styles[dynamaicStyle]}> Title </label>
 
     3) 삼항연산자와 합칠 수도 있다.
+
+12. 여러개의 className 추가하기
+    
+    ` className = {${} ${} ${} ...} ` 하여 추가한다.
+
+    <li className={`${styles.cart} ${styles.bump}`} onClick={toggleModal}>
+
                 
 12. "리액트 포털"이란?
 
