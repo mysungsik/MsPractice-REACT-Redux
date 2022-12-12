@@ -1,11 +1,12 @@
 import Expense from "./components/Expense-components/Expense";
 import NewExpense from "./components/NewExpense-components/NewExpense";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Modal from "./components/UI/Modal";
 import Login from "./components/Login/Login";
 import Practice from "./components/practice.js/practice-useEffect";
 import GetUserInfo from "./components/practice.js/practice-useReducer";
 import UseContextPractice from "./components/practice.js/practice-context";
+import ForUseCallback from "./components/practice.js/for-useCallback";
 
 export default function App() {
   const [expensData, setExpenseData] = useState();
@@ -24,9 +25,14 @@ export default function App() {
   function toggleModal() {
     setModal((prev) => !prev);
   }
-  console.log(year);
+
+  const funA = useCallback(function funA() {
+    console.log("a");
+  }, []);
+
   return (
     <div className="App">
+      <ForUseCallback funA={funA} />
       <UseContextPractice></UseContextPractice>
       <Login />
       <GetUserInfo />
