@@ -1,6 +1,6 @@
 [INDEX]================================================================================================================================
 
-<기본>
+<스킬 및 기본>
 
 0. 시작은 npm start
 1. src 안에, components 폴더를 만들어, component 를 만든다.
@@ -29,6 +29,21 @@
 24. useReducer HOOK 사용해보기
 25. Context 사용하기
 26. store 의 Context 안에서, 모든 공급이 이루어지게 만들기 [가독성을 위해, 공급하는 value 를 "공급하는곳에서 적지 않기 위하여"] 
+27. HooK 들의 유의사항
+28. 커스텀 훅 만들기
+29. 커스텀 훅 사용하기
+30. 커스텀 훅과 매개변수
+31. 현실적인 커스텀 훅 의 생성
+32. 현실적인 커스텀 훅 의 사용
+33. 커스텀 훅을 사용하여, 반복되는 INPUT FORM 을 처리해보자
+
+
+
+[추가] useMemo와 useCallback 을 통한, 최적화
+
+==== [HTTP 메서드] ===
+
+ 
 
 <차이점>
 
@@ -50,6 +65,16 @@
 5. 무상태 컴포넌트 = 프레젠테이셔널 컴포넌트 = dumb 컴포넌트
 6. JSX 가 반드시, 하나의 root Element 로 묶여야 하는 이유
 7. useRef 로 조작하는 것이 좋지 않은 이유 (읽는 것 제외하고)
+8. 디바운싱 (디바운스 = 그룹화)
+9. 리액트가 작동하는 방식에 대하여
+10. App.js 처럼 상위 컴포넌트가 재평가되면, 모든 하위 자식들도 전부 재평가 및 실행 된다. "낭비를 어떻게 막을 수 없을까?"
+11. 그럼 왜? 항상 사용하지 않는가?
+12. 언제 React.memo() 를 사용하는가?
+13. React.memo() 는 "원시값의 props" 를 비교하는 데에만 적합하다.
+14. 그렇다면 함수형으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useCallback() 을 이용한다.
+15. 그렇다면 "객체나 배열" 으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useMemo() 을 이용한다.
+16. State 에 관하여
+17. 커스텀 훅이란?
 
 
 
@@ -65,7 +90,7 @@
 3. 결국 붙여지는 곳은 메인 "App.js" 이다.
 
 4. 해당 컴포넌트만 적용받는, 기본 스타일링은 .module.css이다.
-    import "./ExpensiveItem..module.css";
+    import "./ExpensiveItem.module.css";
 
 5. 그냥 css 를 사용하면, "묶인 컴포넌트 전체가 바뀐다." 클래스네임을 확실히 지정할거면 이게 더 편하다
     import "./ExpensiveItem..css";
@@ -877,8 +902,540 @@
     3. 하나의 의존성이라도 있는 경우, "웬만하면 useEffect를 사용"한다. 또한, 의존성에 그 값을 넣는다.
             
 
-            
+28. 커스텀 훅 만들기
 
+    <규칙> ***
+        "반드시!!" 리팩토링 하는 함수의 이름을 "use" 로 시작하게 만든다.
+
+            function use... ( O ) 
+            function useCounter ( O ) 
+            function useAdd ( O ) 
+
+            function refactoringHook ( X )
+
+        "그래야만, 리액트가 확인하고, 커스텀훅으로 인정된다."
+
+    <추가사항>
+        
+        폴더와 파일이름은 마음대로 정해도된다. 다만, 분명히 커스텀 훅임을 알아볼 수 있게 짓도록 하자
+
+        "hooks" 폴더의 "use-Counter.js" 처럼
+
+    <예시>
+
+        <컴포넌트 1>
+            import {useState, useEffect} from "react"
+            
+            function ...(){
+                const [counter, setCounter] = useState(0)
+
+                useEffct(()=>{
+                    const interval = setInterval(()=>{
+                        setCounter((prev)=>(prev +1))       // 차이점 : +1 이됌
+                    }, 1000)
+
+                    retrun ()=> clearInterval(interval)
+                },[])
+
+                return (
+                    <div> {counter} </div>
+                )
+            }
+
+        <컴포넌트 2>
+            import {useState, useEffect} from "react"
+            
+            function ...(){
+                const [counter, setCounter] = useState(0)
+
+                useEffct(()=>{
+                    const interval = setInterval(()=>{
+                        setCounter((prev)=>(prev -1))       // 차이점 : -1 이됌
+                    }, 1000)
+
+                    retrun ()=> clearInterval(interval)
+                },[])
+
+                return (
+                    <div> {counter} </div>
+                )
+            }
+
+                                ==>>
+
+        <커스텀훅>
+
+            "/hooks/use-counter.js"
+
+                function useCounter(){                          // 반드시 use 로 시작할것
+                    const [counter, setCounter] = useState(0)   // 훅 사용을 그대로 복사
+
+                    useEffct(()=>{
+                        const interval = setInterval(()=>{
+                            setCounter((prev)=>(prev -1))       
+                        }, 1000)
+
+                        retrun ()=> clearInterval(interval)
+                    },[])
+
+                    return counter;                             // "상태"를 반환 ***
+                        
+                }   
+
+                export default useCounter                       // export 한다.
+
+
+            
+29. 커스텀 훅 사용하기
+
+    : 기존 컴포넌트에, 리팩토링 한 "커스텀 훅을 가져와 사용한다."
+
+        <컴포넌트 1>
+
+            import useCounter from "../../..."
+
+            function ...(){
+                const counter = useCounter()
+
+                return (
+                    <div> {counter} </div>
+                )
+            }
+
+    ==> 이때, 리팩토링해 가져온 "상태" 는 "공유되는 것이 아니라", "각각 사용한 컴포넌트 함수 안에서 따로 적용된다."
+
+
+30. 커스텀 훅과 매개변수
+
+    : 당연히, 커스텀훅 에도 "매개변수" 를 사용할 수 있다.
+
+        기존 컴포넌트2 에서는 컴포넌트1 의 함수와 달리 + 대신 - 를 사용한다.
+
+        이를 위해, "새 커스텀 훅" 을 만들기 보다는, "기존의 커스텀훅에, 매개변수를 통해, 다른 역할을 하게 만들자."
+
+    현 커스텀 훅에 필요한 매개변수는
+            "초기상태", "함수 로직", "useEffect의 의존성" 이다.
+
+        <커스텀훅>
+            "/hooks/use-counter.js"
+
+                function useCounter(initValue, customFunction){             
+                    const [counter, setCounter] = useState(initValue)   // 매개변수        
+
+                    useEffct(()=>{
+                        const interval = setInterval(()=>{
+                            customFunction                      // 매개변수
+                        }, 1000)
+
+                        retrun ()=> clearInterval(interval)
+                    },[])
+
+                    return counter;
+                        
+                }   
+
+                export default useCounter 
+
+
+        <혹은 다른방법>
+
+                function useCounter( forward = true ){           // 매개변수 설정 후 초기값 부여
+                    const [counter, setCounter] = useState(0)          
+
+                    useEffct(()=>{
+                        if(forward){
+                            const interval = setInterval(()=>{
+                                setCounter((prev)=>(prev +1))       // 매개변수 에 따라 바뀌는 함수
+                            }, 1000)
+                        } else{
+                            const interval = setInterval(()=>{
+                                setCounter((prev)=>(prev -1))       // 매개변수 에 따라 바뀌는 함수
+                            }, 1000)
+                        }
+
+                        retrun ()=> clearInterval(interval)
+                    },[counter])
+
+                    return counter;
+                        
+                }   
+
+                export default useCounter 
+
+31. 현실적인 커스텀 훅 의 생성
+
+    예시) HTTP 요청
+
+        <App.js>
+            import React, { useEffect, useState } from 'react';
+
+            import Tasks from './components/Tasks/Tasks';
+            import NewTask from './components/NewTask/NewTask';
+
+            function App() {
+                const [isLoading, setIsLoading] = useState(false);
+                const [error, setError] = useState(null);
+                const [tasks, setTasks] = useState([]);                         // 차이점 1 : State 사용
+
+                const fetchTasks = async (taskText) => {
+                    setIsLoading(true);
+                    setError(null);
+                    try {
+                        const response = await fetch(
+                            'https://react-http-6b4a6.firebaseio.com/tasks.json'     // 차이점 2 : http 요청 방법(get)
+                        );
+
+                        if (!response.ok) {
+                            throw new Error('Request failed!');
+                        }
+
+                        const data = await response.json();
+
+                        const loadedTasks = [];
+
+                        for (const taskKey in data) {
+                            loadedTasks.push({ id: taskKey, text: data[taskKey].text });
+                        }
+
+                        setTasks(loadedTasks);                                      // 차이점3. State 사용 유무, 결과값 사용 방법
+                    } catch (err) {
+                        setError(err.message || 'Something went wrong!');
+                    }
+                    setIsLoading(false);
+                };
+                        ...
+
+        <컴포넌트A>
+
+            import { useState } from 'react';
+
+            import Section from '../UI/Section';
+            import TaskForm from './TaskForm';
+
+            const NewTask = (props) => {
+                const [isLoading, setIsLoading] = useState(false);          // 차이점 1 : State 하나 부족
+                const [error, setError] = useState(null);
+
+                const enterTaskHandler = async (taskText) => {
+                    setIsLoading(true);
+                    setError(null);
+                    try {
+                        const response = await fetch(
+                            'https://react-http-6b4a6.firebaseio.com/tasks.json',    // 차이점 2 : http 요청 방법(post)
+                            {
+                            method: 'POST',
+                            body: JSON.stringify({ text: taskText }),
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error('Request failed!');
+                        }
+
+                        const data = await response.json();
+
+                        const generatedId = data.name;                              // 차이점3. State 사용 유무, 결과값 사용 방법
+                        const createdTask = { id: generatedId, text: taskText };
+
+                        props.onAddTask(createdTask);
+                    } catch (err) {
+                        setError(err.message || 'Something went wrong!');
+                    }
+                    setIsLoading(false);
+                };
+
+                    ...
+
+        ==> 이 비슷한 두 함수를, "커스텀훅" 으로 만들기 위해서는
+
+            1. 한쪽에선 사용하지 않는 State 는 공용이므로 삭제,
+            2. fetch 의 URL 은 동적으로 여기저기 사용해야하므로, [ FETCH.URL ]
+            3. fetch 의 방법은, 서로 다르므로, [ FETCH.METHOD]
+            4. feth 의 결과값 사용 방식이 서로 다르므로 [ fetch의 결과값만 따로 저장 ]
+
+  
+        => 최종적으로 이것들을 아우르는, "재사용가능한 커스텀훅" 을 만들어보자면,
+
+    
+        <커스텀 훅>
+
+        function useHttp(fecthConfig,applyData) {                                 // 이름에는, 반드시 "use"
+                                                                        // fecthConfig 에는, url, method, headers, body 가 필요할 것이다.
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState(null);                   // "task" 를 담은 "State" 는 삭제
+          
+            async function sendRequest() {                              // 공용으로 쓰기위한 함수이름 변경
+              
+              setIsLoading(true);
+              setError(null);
+              try {
+                const response = await fetch(fecthConfig.url, {
+                  method: fecthConfig.method ? fecthConfig.method : "GET", 
+                  body: fecthConfig.body !== null ? JSON.stringify(fecthConfig.body) : null,
+                  headers: fecthConfig.headers !== null ? fecthConfig.headers : null,
+                });
+          
+          
+                if (!response.ok) {
+                  throw new Error("Request failed!");
+                }
+          
+                const responseData = await response.json();         // data 까지만 뽑고, 추후처리는 각 컴포넌트마다 다르게 해야하므로 이하 삭제
+
+                applyData(responseData)                             // "추후의 데이터 처리" 를 위해, "외부함수"(useHttp)에서 "참조를 위해", applyData 함수에 넣어 넘긴다.
+
+              } catch (err) {
+                setError(err.message || "Something went wrong!");
+              }
+              setIsLoading(false);
+            }
+          
+            return {                                // useHttp 훅을 사용하면, 결과적으로 반환되는 "State" 와, "값"
+              isLoading,       
+              error,
+              sendRequest,                          // isLoading:isLoading, error:error ... 을 모던 자바스크립트는 줄여서 쓸 수 있다.
+            };
+          }
+          
+          export default useHttp;
+
+    ==> const useHttpResult = useHttp() 처럼, 사용하면, 
+            useHttpResult = {isLoading, error, sendRequest} 의 결과값이 나올 것이다.
+
+            "isLoading" 과 "error" 는 "커스텀 훅" 에서 반환된 "상태" 가 있을 것이고
+            "sendRequest 함수"에서는, "responseData" 가 "applyData 함수 파라미터"에 의해, 부모(사용한곳) 으로 전달될 것이다. [클로저]
+                : sendRequest 를 호출하면, responseData 를 파라미터로, fetch 한 값을 사용할 수 있다
+
+32. 현실적인 커스텀 훅 의 사용
+
+        import useHttp from "./hooks/use-http";
+
+        function App() {
+        const [tasks, setTasks] = useState([]);
+        const fecthConfig = {
+            url: "https://react-demo-771dc-default-rtdb.firebaseio.com/demo.json",  // 필요하다면, body와, headers 까지 포함
+        };
+
+        function applyData(data) {      // data 안에는, useHttp 에서 받아온, responseData 가 들어갈 것이다.
+            const loadedTasks = [];
+
+            for (const taskKey in data) {
+                loadedTasks.push({ id: taskKey, text: data[taskKey].text });
+            }
+
+            setTasks(loadedTasks);
+        }
+
+        const useHttpResult = useHttp(fecthConfig, applyData);
+
+        const { isLoading, error, sendRequest } = useHttpResult;    
+
+        useEffect(() => {   // useHttpResult 의 결과인 sendRequest 함수를 호출하면,
+            sendRequest();  // useHttp 안의 sendRequest 함수가 실행되고, fetch함수 내부의 sendRequest() 함수가 실행될것이다.
+        }, []);             // 그 안에는 responseData 가 담겨있고, App.js 에서 사용한, applyData 함수에 의해, State 로 들어갈것이다.
+
+        function taskAddHandler(task) {
+            setTasks((prevTasks) => prevTasks.concat(task));
+        }
+
+    1. useHttp 커스텀훅 
+
+        : 나를 import 하면, 결과로 내 안의 isLoading, error State 와, sendRequest() 함수를 보내줄게
+
+    2. App.js
+
+        : 알았어, 너를 사용해서, useHttpResult 로, isLoading, error, sendRequest 를 받았어
+
+        : [sendRequest 의 fetch 결과]인 "responseData" 로[ sendRequest 내부의 함수]인, "applyData(responseData)" 가 자동으로 실행되는데,
+            applyData 는 내 것을 사용할거야
+
+        : applyData( 파라미터 ) 안의 파라미터에는, 너가 준 responseData 가 들어있어, 그것을 가지고 나는 조작해서, tasks State 안에 넣고 사용할게
+
+
+    ==> [props 의 상위 컴포넌트로의 전달 과 같은 것]
+
+        상위 컴포넌트에서, 하위 컴포넌트로, props 로 함수를 주면,
+
+        하위 컴포넌트에서 실행하면, 실제로는 상위 컴포넌트에서 실행되는 것과 같고,
+            그 파라미터 안의 값은, 하위컴포넌트의 값을 가져온다.
+
+
+33. 커스텀 훅을 사용하여, 반복되는 INPUT FORM 을 처리해보자
+
+        import styles from "./basic-form.module.css";
+        import AlertFun from "./alert";
+        import { useEffect, useState } from "react";
+
+        function BasicForm() {
+            const [inputText, setInputText] = useState("");
+            const [inputEmail, setInputEmail] = useState("");       // 만약 input 이 수백개라면? 수백개를 다 쓰나?
+
+            const [textIsTouched, setTextIsTouched] = useState(false);
+            const [emailIsTouched, setEmailIsTouched] = useState(false);
+
+            const [error, setError] = useState(false);
+
+            function validationCheck() {
+                if (textIsTouched && emailIsTouched) {
+                    if (
+                        inputText.trim() === "" ||
+                        inputEmail.trim() === "" ||
+                        !inputEmail.includes("@")
+                    ) {
+                        setError(true);
+                    }
+                }
+            }
+
+            useEffect(() => {
+                validationCheck();
+            }, [inputText, inputEmail]);
+
+            function inputNameHandler(e) {                      // 만약 input 이 수백개라면? 수백개를 다 쓰나?
+                setInputText(e.target.value);
+            }
+
+            function inputEmailHandler(e) {
+                setInputEmail(e.target.value);
+            }
+            return (
+                <form className={styles.maindiv}>
+                    <label htmlFor="text"> 이름</label>
+                        ...
+                </form>
+            );
+        }
+
+        export default BasicForm;
+
+    <리팩토링>=======================================================================================
+
+        import styles from "./basic-form-refac.module.css";
+        import AlertFun from "./alert";
+        import { useEffect, useState } from "react";
+        import useInput from "../hooks/use-input";
+
+        function BasicFormRefac() {
+
+            const [error, setError] = useState(false);
+
+            const inputTextResult = useInput((inputText) => String(inputText).trim() === "");
+            const inputEmailResult = useInput((inputEmail) => !String(inputEmail).includes("@"));
+
+            const {
+                inputValue: inputText,
+                hasError: inputTextError,
+                inputIsTouched: inputTextIsTouched,
+                inputHandler: inputTextHandler,
+                inputTouchHandler: inputTextTouchHandler,
+            } = inputTextResult;
+
+            const {
+                inputValue: inputEmail,
+                hasError: inputEmailError,
+                inputIsTouched: inputEmailIsTouched,
+                inputHandler: inputEmailHandler,
+                inputTouchHandler: inputEmailTouchHandler,
+            } = inputEmailResult;
+
+            function validationCheck() {
+                if (inputTextIsTouched && inputEmailIsTouched) {
+                    if (inputTextError || inputEmailError) {
+                        setError(true);
+                    }
+                }
+            }
+
+            useEffect(() => {
+                validationCheck();
+            }, [inputText, inputEmail, inputTextIsTouched, inputEmailIsTouched]);
+
+            return (
+                <form className={styles.maindiv}>
+                    <label htmlFor="text"> 이름</label>
+                    <input
+                        type={"text"}
+                        id={"text"}
+                        onChange={inputTextHandler}
+                        onBlur={inputTextTouchHandler}
+                    />
+                    <label htmlFor="email"> 이메일</label>
+                    <input
+                        type={"email"}
+                        id={"email"}
+                        onChange={inputEmailHandler}
+                        onBlur={inputEmailTouchHandler}
+                    />
+                    {error && <AlertFun />}
+                </form>
+            );
+        }
+
+        export default BasicFormRefac;
+
+    <커스텀훅> =================================================================
+
+    [리팩토링 해야 하는 것들]
+        1. useState
+        2. validation
+        3. validation 하기 위한, inputHandelr 함수  => 아웃소싱해서 호출할것
+        4. validation 하기 위한, isTouchedHandler 함수  => 아웃소싱해서 호출할것
+
+    [return 해야 하는 상태 (부모측에서 사용할 값)]
+        1. 입력되는 값의 상태
+        2. 인풋의 validation 결과
+        3. 이벤트 리스너에 함수로 들어갈 함수들 (inputHandelr, isTouchedHandler )  => 아웃소싱해서 호출하므로
+
+    [부모로부터 받아야 하는 값들]
+        1. validation 로직
+
+        ==============================
+
+        import { useState } from "react";
+
+        function useInput(inValidationCheck) {
+            const [inputValue, setInputValue] = useState(); // 입력되는 값의 상태
+            const [inputIsTouched, setInputIsTouched] = useState(false); // touched 되어있는지의 상태
+
+            const inputIsInvalid = inValidationCheck(inputValue); // inputValue 를 체크해보니, invalid 한 상태냐? ***
+            const hasError = inputIsTouched && inputIsInvalid; // 터치 햇는데, invalid 한 상태냐? => 에러발생
+
+            function inputHandler(e) {          // 입력값 받기위한 함수       ==>  이 커스텀훅을 사용하는곳에서, 호출가능하다.
+                setInputValue(e.target.value);
+            }
+
+            
+            function inputTouchHandler() {      // 터치되었는지 확인하는 함수     ==>  이 커스텀훅을 사용하는곳에서, 호출가능하다.
+                setInputIsTouched(true);
+            }
+
+            return {
+                inputValue,
+                inputIsTouched,
+                hasError,
+                inputHandler,
+                inputTouchHandler,
+            };
+        }
+        export default useInput;
+
+        // inputValue 를 체크해보니, invalid 한 상태냐? ***
+        //  : 반드시, 이 커스텀 훅 안에 있는 value 를 사용해야한다.
+        //  : 그래야 이 커스텀 훅을 여러번 사용했을때, 서로 다른 "완전히 다른 value 들을 넣을 수 있으므로"
+        //  : 실제 실행장소는, 부모이므로, [이 함수 내부의 값을 사용하기 위해 함수형으로 넣는다.]
+
+
+    => 더 복잡해진건 기분탓인가..!
+
+         
+
+    
+        
+
+            
 <차이점>
 
 1. 페이지의 유무
@@ -1001,7 +1558,293 @@
 움직임을 그룹화한다. 해서 "디바운싱이다."
 
 
+9. 리액트가 작동하는 방식에 대하여
+
+    "리액트" 는 오로지 "컴포넌트" 만 신경쓴다.
+
+        컴포넌트끼리 "props" 를 넘긴다던가 [ props 전달]
+        "context" 를 사용하여, component 의 "상태를 변화"한다던가 [ wide-data ]
+        component 가 "state" 변화에 의해 "재평가" 된다던가 [ internal-data ]
+
+        이런 것들이 변화되면, "컴포넌트를 재평가" "컴포넌트"를 re-render한다.,
+        화면에 표시해야 할 것이 있다면  리액트는, ReactDOM 에 그것을 알린다.
+
+    "리액트 DOM (Virtual DOM)" 은 "REAL DOM"에게 "현재 스냅샷과 다른것"만 비교하여, "전달"한다.
+
+    "리액트"에 의해, "비교되어 다름이 판단된 ELEMENT는" "리액트 DOM" 에게 보내지고,
+    "리액트 DOM"은, REAL DOM 을 업데이트한다
+
+    이때 "전체 REAL DOM을 re-rendering" 하는 것이 아니고, "필요한 부분(차이)만 추가, 삭제"한다.
+
+    만약 "자식이 부모의 컴포넌트에 들어있을때" 부모컴포넌트의 State 를 바꾼다면 어떻게될까.
+    "자식도 함께 재평가된다."
+
+    [이미 자식컴포넌트는, 부모컴포넌트의 일부이기 때문이다.]
+
+10. App.js 처럼 상위 컴포넌트가 재평가되면, 모든 하위 자식들도 전부 재평가 및 실행 된다. "낭비를 어떻게 막을 수 없을까?"
+
+    "React.memo()" 를 사용한다.
+
+    React.memo() 는, props 를 비교하여," props 가 변화할때만, re-render 한다"
+
+            import React from "react"
+
+            function Demo(props){
+                    ...
+            }
+            export default React.memo(Demo)
+
+11. 그럼 왜? 항상 사용하지 않는가?
+
+    props 를 비교하는 비용이 발생하기 때문이다.
+
+    props 를 저장, 비교 하는 "성능비용" 과, [컴포넌트를 re-render하는 성능비용] 을 비교했을때, 더 나은 쪽을 선택해야 하기 때문이다.
+
+12. 언제 React.memo() 를 사용하는가?
+
+    꽤나 상위 컴포넌트에 위치해서, 자식으로 있는 컴포넌트가 많을때, 
+
+    그럼에도 불구하고, 한단계 상위 컴포넌트의 props 는 거의 고정된 채로 그곳에 보낼때,
+
+    컴포넌트 트리가 이런 경일 경우
+
+        A   - AB - C - D - F ...
+            - AC - AD ...
+
+    A로 부터 오는 props 가 " AB 에서는 변화가 없고",
+                           " AC 에서만 변화가 대부분일 경우"
+    AB 는 props 의 변화가 거의 없고, 딸린 자식들이 많기 때문에, React.memo() 를 사용하면 유용한 최적화 가 될 것이다.
+
+            * 애초에 작은 App 은 사용할 필요가 없다.
+
+13. React.memo() 는 "원시값의 props" 를 비교하는 데에만 적합하다.
+
+            
+        <부모>
+            function App(){
+
+                function funA(){
+
+                }
+
+                retrun(
+                    ...
+                    <DemoA props={false}/>      // 원시값 props
+                    <DemoB props={funA}/>       // 참조값인 funnA 함수
+                )
+            }
+        
+        <자식 A>
+                
+            import React from "react"
+
+            function DemoA(props){
+                    ...
+            }
+            export default React.memo(Demo)
+
+        <자식 B>
+
+            import React from "react"
+
+            function DemoB(props){
+                    ...
+            }
+            export default React.memo(DemoB)
 
 
+    ==> 이 경우에서는, "자식 B" 는 "re-render" 된다. "심지어 함수에서 나온 값, 식이 전부 동일함에도"
 
+    [원시값과 참조값]
+
+        false === false // true
+        "hi" === "hi"   // true
+        [1,2,3] === [1,2,3]     // ?
+
+            정답은 false 이다.
+
+        왜? 배열은 "참조값"이니까.
+
+        "원시값 을 제외한 값들은 참조값을 갖는다" 대표적으로 배열, 객체 이다. 
+
+        그리고 "함수"는 "객체"이다. (자바스크립트의 1급객체)
+
+        그러므로, React.memo 는 "이전 함수", "현 함수" 를 비교하지만, 결국 "다르다" 라고 인식한다.
+
+        그러므로, React.memo() 의 props 비교에는 "원시값" 으로 넣어야만 한다.
     
+
+14. 그렇다면 "함수형"으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useCallback() 을 이용한다.
+
+    useCallback() 은 useEffct() 와 마찬가지로 종속성이 필요한 Hook 이다.
+
+    useCallback( 함수 , []) 를 사용하게 되면,
+
+        함수는 마치 "한 변수에 저장 된 것처럼" 값이 같다면, 새로 생성하지 않고 "변하지 않는 메모리주소를 갖게된다".
+
+            * 원래 안변하지만, "새로운 함수의 메모리 주소로, 새 함수를 할당하지 않는다는 말"
+
+            A 함수를 계속 돌려쓰게된다.
+
+    ==> 함수 생성시, useCallback() Hook 을 사용하게 되면, props 로 넘기더라도, 같은 함수를 가르킨다.
+
+                
+    <부모>
+        function App(){
+            const funA = useCallback(function funA(){
+                console.log("funA")
+            },[])
+
+            retrun(
+                ...
+                <DemoB props={funA}/>       // 참조값인 funnA 함수
+            )
+        }
+
+       
+
+    <자식>
+        import React from "react";
+
+        function DemoB(props) {
+            const { funA } = props;
+            console.log("this is for callback");
+
+            funA();
+
+            return <div></div>;
+            }
+
+        export default React.memo(DemoB);
+
+
+    ==> "부모" 의 "상태" 가 변하여도, "props 로 들어간 함수가 변하지 않았으므로"
+            자식인 DemoB 는 "re-render" 되지 않는다.
+    
+15. 그렇다면 "객체나 배열" 으로 props 를 넘긴다면, 어떻게, 재평가를 방지할 수 있을까?  React.memo() 에 넘기는 함수를 만들때 useMemo() 을 이용한다.
+
+    <사용 방법> : useCallback 과 비슷한 형태로 사용한다. 다만, 함수를 반환하기 위해, 함수형을 쓰는 것은 아니다.
+                : 의존성으로, 의존되는 값을 넣어주면 된다.
+
+            예시)
+                const {item} = props
+                    ...
+
+                    useMemo(()=>{
+                        return item.find(...)
+                    },[item])
+
+    <기본 사용>
+        useMemo( ()=>
+            return{
+                "배열"
+            },[])
+
+        <부모>
+            import {useMemo} from "react"
+
+            function App(){
+                const ArrayA = useMemo(()=>{
+                    return [1,2,3,4,5]
+                }, [])
+
+                retrun(
+                    ...
+                    <DemoB props={ArrayA}/> 
+                )
+            }
+
+        <자식>
+            import React from "react";
+
+            function DemoB(props) {
+                cosnt {ArrayA} = props
+
+                return <div></div>;
+            }
+
+            export default React.memo(DemoB);
+
+        ==> 배열은 참조값이므로, 생성될때마다, 다른 메모리의 주소를 갖는다.
+            그러므로, 내부 값이 같다면, 같은 메모리의 주소를 참조할 수 있도록 만들어야 하고 (위의 함수와 같이)
+
+            그것을 위해, useMemo(()=>{},[]) 를 사용한 것이다.
+
+            같은 값은 가진 배열을 props 를 넘겨주면, 그 값이 바뀌지 않을때, React.memo 에 의해, 
+            props 가 바뀌지 않은 컴포넌트는, "재평가와 실행"이 되지 않는다.
+
+            [최적화]
+
+16. State 에 관하여
+
+    : useState 는, 언제 상태를 업데이트하는가?
+
+            function Demo(){
+                const [x, setX] = useState(false)
+
+                function change(){
+                    setX(true)
+                    console.log(x)
+                }
+
+            }
+
+        => change 함수를 실행시키고 console.log() 에는 무엇이 나올까?
+            "초기상태인 false 이다."
+
+    useState 는 상태를 변화시킬때, "State 변화를 스케쥴링"한다.
+
+    여러개의 상태 변화일 경우, A -> B -> C .. 라면
+
+    "A 를 B 로 바꾸려는 스케쥴", "B 를 C 로 바꾸려는 스케쥴"을 "지정하고, 수행한다."
+
+        바꾼 이후, 컴포넌트가 전부 "재평가, 실행" 되고 나서, "그 이후, State 는 업데이트된다".
+
+
+    가장 흔하게 발생되는 실수를 보자면,
+    
+        const [enteredName, setEnteredName] = useState("before N")
+
+        function submitHandler(){
+            setEnteredName(e.target.value)
+
+            console.log(enteredName)        // "before N"
+        }
+
+    그러므로, 훅이 포함되어있는 함수 내에서 변경된 값을 바로 사용하려면, State 가 아닌, 변수에 저장된 값을 바로 넣어주는 수 밖에 없다.
+
+        function submitHandler(e){
+
+            setEnteredName(e.target.value)
+
+            console.log(e.target.value)        // "after N"
+        }
+
+17. 커스텀 훅이란?
+
+    : 대부분의 중복되는 함수 및 중복되는 코드가 있을때, 우리는 파일 한켠에 중복되는 코드를 저장해두고 아웃소싱하는
+        "리팩토링" 하게된다.
+
+    리팩토링을 하고 싶은데, 그 안에 Hook (useState, useEffect ...) 가 들어있다면?
+
+        "Hook 이 포함된 상태의 함수"를 리팩토링해야한다.
+
+    이때, "Hook 을 포함하는 함수" 를 "커스텀훅" 이라 한다.
+
+18. 훅을 리팩토링?
+
+    <훅 사용의 유의사항>
+
+        1. HOOK 은 반드시 "리액트 컴포넌트"안에서 사용해야한다. 
+        리액트 컴포넌트 밖에 정의한 "리듀서 함수", "next의 SSR", "API" 등.. 다른곳은 안된다.
+
+        2. HOOK 은 반드시, "컴포넌트 함수의 최상위에 사용해야한다"
+        콜백 함수, 중첩 함수 같은, 하위 블록의 함수에서 사용이 불가능하다.
+
+        3. 하나의 의존성이라도 있는 경우, "웬만하면 useEffect를 사용"한다. 또한, 의존성에 그 값을 넣는다.
+            
+    어? 훅은 반드시, "리액트 컴포넌트" 안에서만 사용해야한다 했다. 그런데 어떻게 "커스텀훅"을 만들지?
+
+19. 커스텀 훅 만들기
+
+        => 28. [커스텀 훅] 만들기 참조

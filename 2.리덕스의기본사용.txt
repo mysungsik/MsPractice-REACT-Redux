@@ -2,13 +2,293 @@
 
     : https://ko.redux.js.org/introduction/getting-started
 
-1. npm i redux
+1. npm i redux, npm i react-redux
 
     : https://www.npmjs.com/package/redux
 
-2. import redux
 
-    import {createStore} from "redux"
+    리덕스는 자바스크립트에서도 쓸 수 있는 "리액트 만을 위한 패키지가 아니다"
+    "리덕스와 리액트를 편하게 이용하기 위해," react-redux 패키지를 설치한다.
+
+3. createStore 를 통해, redux용 store 를 만든다.
+
+    <기본사용>
+
+        import { createStore } from "redux";  
+
+        const xx = (state,action) =>{
+            ...
+            if (action.type === "XXX") {
+                return ...
+            }
+
+            return ...
+        }
+
+
+    < /src/store/index.js >
+
+        import { createStore } from "redux";                            // 1. createStore 를 import
+
+        const counterReducer = (state = { counter: 0 }, action) => {     // 2. 리듀서 함수를 만든다. (마치, useReducer 처럼) (초기값 지정은, 맘대로)
+            if (action.type === "INCREMENT") {
+                return {
+                    counter: state.counter + 1,
+                };
+            }
+            if (action.type === "DECREMENT") {
+                return {
+                    counter: state.counter - 1,
+                };
+            }
+
+            return state;
+        };
+
+        const store = createStore(counterReducer);                          // 3.리듀서 함수를 토대로, store 를 만든다. (마치 useReducer 를 사용하듯)
+                          
+        export default store;
+
+        
+    ==> "이제, 리액트 앱과, store 를 연결하여, 리액트 앱에서 사용할 수 있도록 만든다".  [store 를, 리액트 엡에 공급한다!] 
+        "index.js" 로 가자 [앱을 감싸는 최상위 컴포넌트로!]
+
+4. index.js 에서, store 를 앱 전역으로 공급한다 with. "react-redux" [마치 context 처럼]
+
+    < index.js >
+
+        import React from "react";
+        import ReactDOM from "react-dom/client";
+        import { Provider } from "react-redux";
+        import store from "./store/index";
+
+        import "./index.css";
+        import App from "./App";
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(
+            <Provider store={store}>
+                <App />
+            </Provider>
+        );
+
+    ==> context 와 마찬가지로, Provider 로 공급하려면, 그 안의 value 를 알아야 공급을 한다.
+        그 공급 값을 정해주는 코드가 "store" 이다.  (context 에서는 value 였다.)
+
+        store 코드 로 "공급할 저장소(값)을 지정"할 수 있는데, 그 안에서 공급할 것이 우리가 방금 만든, "store" 컴포넌트(저장소) 이다.
+
+5. 리액트 컴포넌트에서 사용할때, "react-redux" 에서 useStore 혹은 useSelector 훅을 import 하여 사용한다. [useStore or useSelector]
+
+    useStore는 "저장소에 직접 관여"하는 것이고
+    useSelector 는 저장소의 "우리가 원하는 파트"를 "선택하여 관여"하는 것이다.
+
+    "useSelector 를 추천한다."
+
+        < useSelector >
+            import classes from "./Counter.module.css";
+            import { useSelector } from "react-redux";
+
+            const Counter = () => {
+                const counter = useSelector((state) => state.counter);      // useSelector 를 사용한다.
+
+                console.log(counter);
+
+                const toggleCounterHandler = () => {};
+
+                return (
+                    <main className={classes.counter}>
+                        <h1>Redux Counter</h1>
+                        <div className={classes.value}>-- COUNTER VALUE --</div>
+                        <button onClick={toggleCounterHandler}>Toggle Counter</button>
+                        </main>
+                );
+            };
+
+            export default Counter;
+
+    ** useSelector 를 사용하면, 사용한 컴포넌트는 "자동으로 store 를 구독한다"
+        그리고 자동으로, [항상 새로 업데이트된 State 를 받는다.] ***
+
+6. 리액트 컴포넌트에서, dispatch 를 사용하여, action 보내, 상태를 컨트롤하기.[useDispatch] 
+
+    "useDispatch" from "react-redux" 를 사용한다.
+
+    import classes from "./Counter.module.css";
+    import { useSelector, useDispatch } from "react-redux";
+
+    const Counter = () => {
+        const counter = useSelector((state) => state.counter);
+        const dispatch = useDispatch();
+
+        const toggleCounterHandler = () => {};
+
+        const incrementHandler = () => {
+            dispatch({ type: "INCREMENT" });
+        };
+
+        const decrementHandler = () => {
+            dispatch({ type: "DECREMENT" });
+        };
+
+        return (
+            <main className={classes.counter}>
+                <h1>Redux Counter</h1>
+                <div className={classes.value}>{counter}</div>
+                <div>
+                    <button onClick={incrementHandler}> 증가</button>
+                    <button onClick={decrementHandler}> 감소 </button>
+                </div>
+                <button onClick={toggleCounterHandler}>Toggle Counter</button>
+            </main>
+        );
+    };
+
+    export default Counter;
+
+7. 페이로드를 활용하여, 컴포넌트에서 유동적으로 조작가능한 Redux 만들기
+
+    < store/index.js >
+
+        if (action.type === "USERINPUT") {
+            return {
+            counter: state.counter + action.number,             // 컴포넌트로부터 받은 값을 동적으로 State 변화에 사용한다.
+            };
+        }
+
+    < Counter.js >
+
+        const userinputHandler = (number) => {
+            dispatch({ type: "USERINPUT", number: number });        // 페이로드를 사용해, action 의 프로퍼티에 값을 넣어준다.
+        };
+
+        return (
+            <main className={classes.counter}>
+                    ...
+                <button onClick={() => {userinputHandler(5);}}> 유저인풋 </button>
+              </div>
+
+    < 다른 방법 >
+
+        const userinputHandler = () => {
+            dispatch({ type: "USERINPUT", number: 5 });        // 함수 사용할때 말고, 이쪽에서도 지정 가능
+        };
+        
+8. 추가적인 State 를 다루어보자.
+
+    < 추가적인 State 사용법 >
+
+        1. 초기 값을 빼서 사용 하는 편이 좋다 (당연하게도)
+
+        2. 다른 State 들은 건드리지 않더라도, return 에 스스로를 return 해야한다.
+            반환되는 값은 "새 return 으로 전부 교체된다."
+                ** 새 return 은 절대로 "merge" 되지 않는다.
+                ** 새 return 은 완전히 "overwrite" 될 뿐이다.
+                ** 초기값을 지정하고, return 하지 않았다면 그 프로퍼티는 자동으로 "undefined" 가 된다.
+        
+        3. 다른 State 를 사용하고 싶다면, 그 State 도 사용하는 곳에서 참조하여 사용해야한다.
+
+
+    < / store / index.js >
+            
+        import { createStore } from "redux";
+
+        const initialState = { counter: 0, showCounter: false };    // 1. 초기값을 빼서 사용하는 편이 좋다.
+        
+        const counterReducer = (state = initialState, action) => {
+
+            if (action.type === "INCREMENT") {
+                return {
+                    counter: state.counter + 1,
+                    showCounter : state.showCounter       // 2. 반환되는 값은 "새 return 으로 전부 교체되므로" 사라지지 않기 위해서는, return 한다.
+                };
+            }
+            if (action.type === "DECREMENT") {
+                return {
+                    counter: state.counter - 1,
+                    showCounter : state.showCounter
+                };
+            }
+            if (action.type === "USERINPUT") {
+                return {
+                    counter: state.counter + action.number,
+                    showCounter : state.showCounter
+                };
+            }
+            
+            if(action.type ==="TOGGLE_COUNTER"){
+                return{
+                    counter : state.counter,
+                    showCounter : !state.showCounter
+                }
+            }
+            
+            return state;
+        };
+
+
+    < Counter.js >
+
+            ...
+
+        const Counter = () => {
+            const counter = useSelector((state) => state.counter);
+            const showCounter = useSelector((state) => state.showCounter);      // 3. 다른 State 를 사용하고 싶다면, 그 State 도 사용하는 곳에서 참조하여 사용해야한다.
+            
+            const dispatch = useDispatch();
+
+                ...
+
+            
+9. 가장 흔히하는 실수! 절대 원본의 state 를 변경하지 말 것!!
+        
+    : 리덕스는 반드시, State 를 조작할때, "새로운 객체를 복사하고, 생성해야한다." [ 기본 룰 ]
+
+        import { createStore } from "redux"
+
+        const initialState = {name : xx, age : yy}
+
+        const reducerFn = (state = initialState, action)=>{
+            if(action.type === "AGE_INCREMENT"){
+                state.age = state.age + 1               //  바로 이것! 원본을 그대로 건드려버리고
+
+                return{
+                    name : state.name,
+                    age : state.age                     // 다시 객체로 리턴하는 행위!
+                }
+            }
+        }
+
+        const store = createStore(reducerFn)
+
+        export default store
+ 
+
+    ** "객체" 와 "배열" 은 "참조값임을 명심하자" state.age 를 변경한 순간, "원본의 state 는 변형된다."
+
+    ** 또한, 리덕스에서 state 를 직접 변경할 경우, "state 가 동기화되지 않거나, 얘기치 않은 버그가 발생 할 수 있다."
+            
+
+10. 리덕스를 사용할 때의 문제점
+
+    1. 수십개의 State 를 한꺼번에 다루려면, 매번 모든 프로퍼티(State)를 가진 객체를 만들어  return 해야한다. 수십개씩. 유지보수가 가능할까?
+
+    2. action.type 을 다룰때, "오타가 하나라도 발생하면, 작동이 되지 않는다." 오타나기 쉽다.
+
+    3. 한 프로젝트를 여러명이 작업한다면, 수십개의 action 이 난무할텐데... 식별자 이름의 중복도 발생하기 쉽다.
+
+    4. state 를 직접 건드릴 수도 있다. 실수로. 몇개씩 중첩된 값들이 있을때, 우리는 실수하기 쉽다.
+
+        등등... 수많은 문제점이 있다.
+
+    해결책? [Redux-Toolkit] 을 사용하면된다.
+
+11. Redux-Toolkit
+
+
+
+
+
+    
 
 
 [취소선이 있다고요?]
@@ -21,53 +301,3 @@
     취소선이 보이는게 싫다면, 이름만 바꿔서 사용한다.
 
     import { legacy_createStor as createStore } from "redux";
-   
-
-3. 저장소 생성, 리듀서 함수 생성
-
-    * 리듀서 함수는 반드시 "순수한 함수"여야한다. 
-        side-effect가 없어서, 힝싱 같은 인수를 넣으면 같은 값이 도출되게
-
-
-4. 리듀서 함수를, 저장소의 파라미터에 넣어준다(동작하도록)
-
-5. 구독자를 만들자. (리액트를 사용한다면, 실제 컴포넌트가 될것이다.)
-
-6. 구독자(컴포넌트)와 store를 연결하자. store의 subscribe 메서드로, 컴포넌트를 연결한다.(연결 이라기보다는, store가 변경되면 함수를 실행하는 useEffect와같은 존재)
-
-7. 컴포넌트 안에서, 저장소에 접근해, getState 함수로, 저장소의 값을 가져온다.
-
-8. dispatch 로, action 을 보내고, 리듀서함수는 action 에 따라, 다른 조치를 취한다.
-
-    const redux = require("redux");                                         // 1.  임포트하고
-
-    const counterReducer = (state = { counter: 0 }, action) => {            // 3. 리듀서 함수(동작할 함수) 만들고 (state = 현재 상태)
-
-        if(action.type === "increment"){
-            return {
-            counter: state.counter + 1,                                         // 4. 새로운 상태 를 return 하는 리듀서함수 완성 한다.
-            };
-        }
-        if(action.type === "decrement"){
-            return {
-                counter: state.counter -1
-            }
-        }
-        return
-    };
-
-    let store = redux.createStore(counterReducer);                          // 2. 저장소 만들어서   // 5. 저장소에, 리듀서 함수를 넣어, 상태를 조작
-
-    const subScriber = () => {                                              // 6 구독자를 만들고, 저장소의 값을 가져와보자(추후 컴포넌트가 될것이다.)
-        const latestState = store.getState();                                 
-        console.log(latestState);
-    };
-
-    store.subscribe(subScriber);            // 7. "구독자"가, state 가 변경된 값을 얻기 위해, "subscribe 메서드를 사용한다."
-                                            //  "subscribe"는, store의 변화가 일어날때, 그 함수(추후, 컴포넌트 즉 UI)가 실행된다.
-
-    store.dispatch({ type: "increment" });      // 8. "특수한 값을 가진 action"을 "dispatch"로 "리듀서 함수"에 전달한다.
-
-                                                // 9. 리듀서 함수에서는 action.type 으로 dispatch된 action 을 받고, 그에 따른 조치를 취한다. 
-
-    store.dispatch({ type : "decrement" })      // 10. 리듀서 함수에서는 action.type 으로 dispatch된 action 을 받고, 그에 따른 조치를 취한다.                        

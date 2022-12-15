@@ -13,6 +13,7 @@
 12. "리액트 포털"이란?
 13. "리액트 포털"을 통해, 오버레이 컨텐츠를 표현하기(Modal 등 화면을 덮는 오버레이)
 14. useEffect를 이용하여, 디바운싱을 만들기 with "클린업함수", Check Validation
+15. onFoducs, onBlur 이벤트 리스너를 활용한, Validation
 
 
 [SKILL]==============================================================================================================================
@@ -405,6 +406,13 @@
 -               <label className={styles[dynamaicStyle]}> Title </label>
 
     3) 삼항연산자와 합칠 수도 있다.
+
+12. 여러개의 className 추가하기
+    
+    ` className = {${} ${} ${} ...} ` 하여 추가한다.
+
+    <li className={`${styles.cart} ${styles.bump}`} onClick={toggleModal}>
+
                 
 12. "리액트 포털"이란?
 
@@ -607,6 +615,32 @@
         }
 
     export default Practice;
+
+
+15. onFoducs, onBlur 이벤트 리스너를 활용한, Validation
+
+    사용자가 엔터를 입력했을때, Validation,
+    사용자가 키를 입력중일때, Validation,
+    사용자가, input 의 focus 를 그만 두었을때(blur), Validation
+
+    이중 가장 최고는 역시 마지막이다.
+
+    onBlur 를 통해, 그때 사용자로부터 Validation 을 받아보자.
+
+16. .trim() is not funciton , .includes() is not funciton ... 등 기본 자바스크립트 메서드가 안먹히는 이유와 처리를
+
+    가끔 안먹힐 때가 있다.
+
+    그것은 "문자열" 인지 아닌지 확실하지 않아서, trim, includes 를 사용할 수 없는 것이다.
+
+   " String( ) 안에 그것을 넣어서 .trim, .includes 를 사용한다."
+
+
+   const inputTextResult = useInput((inputText) => inputText.trim() === ""); 
+        ==> not a function!!
+   
+   const inputTextResult = useInput((inputText) => String(inputText).trim() === "");
+        ==> Yes! 된다!
 
 
 
