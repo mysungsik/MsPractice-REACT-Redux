@@ -1,0 +1,424 @@
+1. 리덕스의 리듀서함수는 반드시 "순수 함수" 여야 한다.
+
+    "순수함수"는 동일한 input 에는 반드시 동일한 output 이 나오는 함수를 말한다.
+
+    대표적으로
+
+        const xxFn = ()=>{
+            return 3 + 4
+        }
+
+    "비순수 함수"는 사이드이펙트 가 있는 함수이다. 동일한 input 으로 다른 output 이 나오는 함수.
+
+    대표적으로
+        
+        const xxFn = (xx) =>{
+            console.log(xx)
+        }
+
+   " xx 의 정의가 바뀌면, 다른 값이 log 로 나온다."
+
+2. 안되는 함수들
+
+    [복습. 들어가기 전에 참조함수에 대하여! [STATE 변경하는 꿀팁]]
+
+            const obj1 = [
+                { x: 1, y: 5, z: 3 },
+                { x: 3, y: 3, z: 7 },
+            ];
+            
+            const sameId = obj1.find((item) => item.x === 1);
+            
+            console.log(sameId); // {x:1, y:5, z:3}
+            
+            sameId.y = 10;
+            
+            console.log(sameId); // {x:1, y:10, z:3}
+
+        원본 객체에서, 한가지 객체만을 빼서, 변경하면,
+        원본 객체가 변화한다!
+
+    [리덕스툴킷도 마찬가지이다]
+        
+        이것을 생각하고 다음으로 넘어가자
+
+    =======================================================
+      
+
+    import {createSlice} from "@reduxjs/toolkit";
+
+    cosnt xxSlice = createSlice({
+            ...
+        reducers:{
+            addItmes(state,action){
+                const newItem = action.payload 
+                const existingItem = state.items.find((item) => (item.id === newItem.id))   // 객체(state)에서 뺀것이므로, existingItem 을 변화시켜도, 원본이 변형됌
+                state.totalQuantity++;          // 총량은 변경
+
+                if(!existingItem){
+                    state.items.push({          // 없다면 푸쉬 [리덕스 툴킷이므로, STATE에 직접 관여 가능(실은, 툴킷의 내부함수가 그렇게 되지 않도록 변형, 적용 시키는것이지만)]
+                        id:newItem.id
+                            ...
+                    })
+                } else{
+                    existingItem.quantity = existingItem.quantity + 1                   // 객체에 담겨있는 "existingItem 직접 변경 => 원본도 변형 => 진짜 State가 변화" [이게 키포인트]
+                    existingItem.totalPrice = existingItem.totalPrice + newItem.price
+                }
+
+                fetch()     // ==>> [ X ] [이런게 안된다!]  비동기 함수는 사용 할 수 없다. ***   
+            }
+
+        }
+
+    })
+
+-   ** 키포인트 : "객체에서 따로 뺀 값을 변형해도, 원본이 변형된다."
+
+    [그렇다면 "비동기 함수"와 "사이드이펙트가 있는 함수" 들은 어떻게 처리하는가?]
+
+        지금부터 알아보자!
+
+3. 만약 백엔드 코드가 있다면?
+
+    Nextjs 를 사용했을 때나, Nodejs 를 사용했을때, 즉, 백엔드 코드가 있다면
+
+    "굳이, 프론트 엔드에서 처리하지 않고", 데이터를 백엔드에서 전부 가공한 후, "프론트 엔드에서는 단순히 State 에 저장" 만 할 수도 있다.
+
+    즉, "프론트엔드의 역할이 단순해진다."
+    
+    그렇지만, 지금 배우는 항목에서 FireBase 를 사용하면, 그런 백엔드 코드(가져와서, 재가공, 처리)가 없다.
+
+    그러므로, [가공 및 전송]은 전부 "프론트엔드" 의 영역으로 처리해야한다.
+
+
+4. 그렇다면 "리듀서 함수는 아니고(비동기, 사이드이펙트함수 불가 이므로)" 어디에 그 논리를 두어야 하는가?
+
+    <프로세스>
+
+        1. 버튼을 누른다.
+        2. 버튼을 누르면, action이 dispatch 되고, state 가 변경된다.
+        3. state가 변경되는것과 동시에, DB에 업데이트 된다.
+            =>  "변경된" State 를 "DB에 저장하고 싶다. fetch 하고 싶다"
+
+    <논리적 모순>
+
+        1. 모순이 생긴다. 왜? 예를 들어보자.
+
+                const Header = () => {
+                    const itemState = useSelector((state) => state.item.items); 
+                
+                    const itemDispatch = useDispatch(); 
+                
+                    const submitHandler = (e) => {
+                        e.preventDefault()
+
+                        itemDispatch(itemState.addItems());
+                            console.log(itemState);             // 변경 되었을까?
+
+                            fetch(...)
+                    };
+                            ...
+
+            ==> state 를 변경하자 마자 그 안에 있는 함수에서 fetch 를 한다?
+             "최신 스냅샷이 절대로 반영되지 않는다."
+
+        2. 그렇다면, reducers 에서 fetch 를 하는 논리를? 
+
+            : 애초에 불가능하다.
+
+5.  [방법1] 컴포넌트 함수에서 fetch 를 한다.
+
+    1) "그렇다면 fetch는 어디에서 할까?"
+
+        : "바로 컴포넌트 함수 안에서 하면 된다." useReducer 를 사용해서! itemState가 바뀔때마다 fetch 하게 만들어서, 최신 DB 상태를 유지하게 한다!
+
+            const Header = () => {
+                const itemState = useSelector((state) => state.item.items); 
+            
+                const itemDispatch = useDispatch(); 
+        
+                const submitHandler = (e) => {
+                    e.preventDefault()
+
+                    itemDispatch(itemState.addItems());
+                        ...
+                };
+
+                useEffect (()=>{            // useEffect 를 사용하여, itemState 가 변경 될 때마다 fetch
+                    fetch( ... ,{
+                        method: "PUT",      // 이때 PUT 을 활용하면 좋다. (PUT은 새 값을 기존의 값에 "오버라이드" 한다. "추가가 아니고 오버라이드")
+                        ...                 // "전체 item 의 info 를 담고있는, state 이기 때문에, POST를 한다? 마치 팩토리얼처럼 더해질 것이다."
+                    })                      //   [X], [X,X,Y] [X,X,Y,X,X,Y,Z,] ... 처럼 저장될것이다...
+                },[itemState])
+                
+    2) fetch를 굳이 사용하는 그곳에서, 안해도 된다. 아무대서나, "리덕스는 전역으로 사용 가능하므로" App.js 에서 해도 된다.
+
+        <App.js>
+
+            import { Fragment } from "react";
+            import Counter from "./components/Counter";
+            import Header from "./components/Header";
+            import Auth from "./components/Auth";
+            import { useSelector } form "react-redux"
+
+            function App() {
+                const itemState = useSelector((state) => state.item.items);
+                
+                useEffect (()=>{
+
+                    const sendData = async () =>{                   // 1. 평범한 useEffect 에서 비동기 함수 실행시키기 방법
+                        const response = await fetch( ... ,{
+                            method: "PUT", 
+                            ...
+                        })
+                            ...
+                    } 
+                    sendData()
+
+                },[itemState])
+
+                return (
+                    <Fragment>
+                        <Header />
+                        <Auth />
+                        <Counter />
+                    </Fragment>
+                );
+            }
+            
+            export default App;
+                
+
+6. dispatch 도 함께 있는 useEffect [ dispatch 도 종속성이 될 수 있다.]
+
+    App.js 에서 useEffect 얀에, fetch 를 할때, notification을 이용하려, "dispatch 를 한다고 가정"하자.
+
+        const dispatch = useDispatch()
+
+        useEffect(()=>{
+            const sendData = async ()=>{
+
+                dispatch(
+                    UiActions.showNoti(...)
+                )
+    
+                const response = await fetch(...)
+            }
+            sendData()
+        },[cart, dispatch])     // dispatch 는 "함수"임에도 "툴킷이 변하지 않는 것으로 만들기 때문에 안심하고 종속성에 추가한다."
+    
+
+7. 컴포넌트에서 useEffect 를 사용한 fetch(비동기 함수)의 문제점
+
+    : PUT 을 사용하여, 값을 페칭하면, "초기값이 아무것도 없으므로, 만약 앱을 시작한다면 [기존에 있던] DB 가 비워지는 불상사가 생기고 말 것이다."
+
+    ==> 앱을 처음 시작해서, "초기값이 초기화가 되지 않았다면, 아직 값을 DB 로 PUT 하지 않게 한다"
+
+        어떻게?
+
+        대박..!
+
+[추가. 컴포넌트가 RE-RENDER 될때에는, "컴포넌트 밖에 있는 것이랑은 아무련 관련이 없다는 것을 알자"]
+
+8. 해결 : 초기에는 DB 로 넘기지 않기
+    : useEffect 는 초기 [앱이 시작될때] 한 번, 그리고, 종속성이 변경될 때마다 실행된다.
+    : 문제는 초기에 실행되게 하면 [있던 카트 DB 가 초기화 될 수 있다는 위험] 을 가지고 있다.
+        (예를들면, 장바구니에 담아놓고, 다시 껐다 키면, 장바구니가 초기화되어버리는 상황 심지어 DB까지 지워지니...)
+
+    : 그러므로, useEffect 를 사용하지만, "앱이 시작될때는 적용되지 않고", "오로지 종속성에만 영향을 받아야 한다."
+
+    <원리>
+        1. 컴포넌트 함수 밖에 initial 변수를 정의한다.
+        2. 이 값은, re-render 되도 전혀 영향을 받지 않는다.(초기화가 이루어지지지 않음. 밖 이므로)
+        3. 이 값을 이용하여, initial = true (앱 초기) 라면 useEffect에서 함수를 실행할때, 되돌려버리고, initial = false 로 변경한다.
+        4. 이렇게되면, 아무일도 없이 initial = false 만 만들고, 초기 phase 가 끝날 것이다.
+        5. "초기 phase 는 끝났으니", 이제 useEffect 는 "종속성에 의해서만 함수를 실행할 것이다."
+
+    <코드>
+
+        let initial = true                      // 이 값은 "컴포넌트 외부"에 정의되어있다 == 컴포넌트의 re-render 과 아무련 관련이 없다.
+            
+        function App(){
+            const dispatch = useDispatch()
+        
+            useEffect(()=>{
+                const sendData = async ()=>{
+        
+                    dispatch(
+                        UiActions.showNoti(...)
+                    )
+
+                    if(initial){
+                        initial = false         // initial 이 true 라면, false 로 바꾸고 뒤에 코드는 실행시키지 않도록 한다.
+                        return
+                    }
+        
+                    const response = await fetch(...)   // 초기는 끝났고, 이제 종속성에 의해서(카트가 변할때)에만, fetch 가 진행된다.
+                }
+                sendData()
+            },[cart, dispatch])
+        }
+
+9. [방법2] 액션 생성자 Thunk 를 만들어, store 파일 내부에, 따로 fetch 하는 함수를 만들어 사용한다.
+
+    1) Thunk 는, "액션 생성자"이다.
+
+        : 액션생성자라 하면, "컴포넌트에서, dispatch 를 사용할때, 사용하는 정의된 action 을 호출" 하는 것이 [액션생성자의 생성 ]이라 할 수 있다 
+                
+            import { counterAction } from "../store/index";
+
+            const Counter = () => {
+                const dispatch = useDispatch();
+
+                const toggleCounterHandler = () => {
+                    dispatch(counterAction.toggleCounter());        // counterAction.toggleCounter() => 액션 생성자
+                };
+
+    2)  "store 폳더 안", "자신과 관련된 store 파일" 에, Thunk 를 정의하고 실행하는(비동기식으로) "일반 자바스크립트 함수" 를 만들어 export한다.
+
+        < /store/cart.js >
+
+            import { createSlice } from "@reduxjs/toolkit";
+            import { xxActions } from "../../.."
+
+            const initialCounterState = { counter: 0, showCounter: true };
+
+            const counterSlice = createSlice({              // 슬라이스(리듀서함수) 시작
+                name: "counter",
+                initialState: initialCounterState,
+                    reducers: {
+                        increment(state) {
+                        state.counter++;
+                        ...
+                        }
+                    }
+            })                                              // 슬라이스(리듀서함수) 종료
+
+
+            export const sendCartData = ( inputData ) =>{       // 1. Slice(리듀서 함수) 밖에, "일반 자바스크립트 함수" 를 만든다.
+                return async (dispatch)=>{                      // 2. "사용할 함수" 를 반환한다. [비동기함수로], 파라미터에는 dispatch
+
+                    dispatch( xxActions.xxx ())                 // 3. dispatch도 가능하다. (알림 같은거 사용하기 위한), 파라미터에 있는 dispatch
+
+                    const sendRequest = async () =>{            // 4. "fetch 를 할 중첩함수"를 하나 더 만들고, fetch
+                        const response = await fetch(...)
+
+                        if(!response.ok){
+                            throw new Error(...)
+                        }
+                        const responseData = await response.json()
+                            ...
+
+                    }
+                    try{
+                        await sendRequest                           // 5. "정의한 중첩함수 실행"
+                        dispatch( xxActions.xxx ()) 
+                    }catch(error){
+                        dispatch( xxActions.xxx ()) 
+                    }
+
+                    
+                }
+            }
+
+        ** dispatch 는 "파라미터로 쓴 것" 이므로 따로 import 하여 사용하는 것이 아니다.
+
+
+
+        3) "useEffect" 를 사용하여, Thunk 액션성생자를 사용한다.
+
+            <App.js>
+
+                import { useSelector, useDispatch } from "react-redux"
+                import { sendCartData } from "../..."       // 1. Thunk 를 import
+
+                let initial = true                          // 2. useEffect 사용하므로, 초기에는 역시나 안되도록 설정
+
+                function App(){
+                    useEffect(()=>{
+                        if(initial){
+                            initial = false                 // initial 이 true 라면, false 로 바꾸고 뒤에 코드는 실행시키지 않도록 한다.
+                            return
+                        }
+
+                        dispatch(sendCartData(cartData))    // 3. "dispatch" 를 사용하여, 실행
+                        
+                    },[dispatch])
+                }
+
+
+    ==> 하면서 더 익숙해 져야겠다.
+
+    여기까지가, [비동기, 사이드이펙트 함수] 의 두가지 사용 방법
+
+10. [방법들의 차이점] : "컴포넌트 lean" VS "Store lean"
+
+    1. "App.js" 나, "사용하는 컴포넌트"에서 "직접 fetch" 를 하는 방법.
+
+        : 어렵지 않고, 이렇게 해도 된다.
+
+    2.  fetch 하는 "Thunk(액션생성자)" 를, "store 의 논리가 있는 곳"에 만들어, 컴포넌트에서 import 하여 사용하는 바업
+    
+        : 조금 복잡하지만, "컴포넌트를 Lean 하게 만든다."
+
+    [누굴 더 lean 하게 만드냐의 차이만이 있다.] 예컨대, 아웃소싱 같은것이다.
+
+    2번이 컴포넌트를 관리하기에  더 깔끔할수도, 아니면 1번을 할 수도 있다.
+
+    ** 어디든, "Fat" 한 쪽을 조금더 "Lean" 하게 만드는 "코드 관리 차원에서 선택하면 좋겠다."
+
+
+    
+11. 데이터 가져오기 시작.
+
+
+            
+
+
+                
+
+[ 키포인트 모음 ]
+
+1. "객체에서 따로 뺀 값을 변형해도, 원본이 변형된다."
+2. "전체 앱에 적용되는 모달의 State는 App.js 처럼 가장 비어있고, 보기좋은 곳에 넣는게 좋겠다." [dispatch 는 직접 사용하는 곳에서 하면 좋겠지]
+
+    <App.js>
+        import Header from "./components/Header";
+        import Auth from "./components/Auth";
+        import { useSelector } form "react-redux"
+
+        function App() {        
+            const showCart = useSelector((state) => state.item.showCart);
+            return (
+                <Fragment>
+                    {showCart && <Cart/>}           // 이렇게 위치만 [ dispatch 는 직접 카트를 띄우는 쪽에서 하는게 좋겠다.]
+                    <Counter />
+                </Fragment>
+            );
+        }
+
+3. 모달, 알림모달 등의 UI state 를 따로 모아서, 사용 하는 것도 아주 좋다.
+
+    <생성 ui Slice>
+
+        import { createSlice } from "@reduxjs/toolkit";
+
+        const UISlice = createSlice({
+            name : ...,
+            initialState: ...,
+            reducers:{
+                toggleCart(){
+                    state.showCart = !state.showCart
+                }
+                toggleNofitication(){
+                    state.showNoti = !state.showNoti
+                }
+                ...
+            }
+        })
+
+    
+    <사용>
+
+        function App() {        
+            const showCart = useSelector((state) => state.ui.showCart);
