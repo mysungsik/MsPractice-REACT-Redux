@@ -543,35 +543,35 @@
                 const initialAuthState = { Authentication: false };
                 
                 const counterSlice = createSlice({
-                name: "counter",
-                initialState: initialCounterState,
-                reducers: {
-                    increment(state) {
-                    state.counter++;
+                    name: "counter",
+                    initialState: initialCounterState,
+                    reducers: {
+                        increment(state) {
+                            state.counter++;
+                        },
+                        decrement(state) {
+                            state.counter--;
+                        },
+                        userinput(state, action) {
+                            state.counter = state.counter + action.payload;
+                        },
+                        toggleCounter(state) {
+                            state.showCounter = !state.showCounter;
+                        },
                     },
-                    decrement(state) {
-                    state.counter--;
-                    },
-                    userinput(state, action) {
-                    state.counter = state.counter + action.payload;
-                    },
-                    toggleCounter(state) {
-                    state.showCounter = !state.showCounter;
-                    },
-                },
                 });
                 
                 const authSlice = createSlice({
-                name: "auth",
-                initialState: initialAuthState,
-                reducers: {
-                    login(state) {
-                        state.Authentication = true;
+                    name: "auth",
+                    initialState: initialAuthState,
+                    reducers: {
+                        login(state) {
+                            state.Authentication = true;
+                        },
+                        logout(state) {
+                            state.Authentication = false;
+                        },
                     },
-                    logout(state) {
-                        state.Authentication = false;
-                    },
-                },
                 });
                 
                 const store = configureStore({

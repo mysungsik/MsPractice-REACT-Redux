@@ -214,9 +214,6 @@
 
     ==> 앱을 처음 시작해서, "초기값이 초기화가 되지 않았다면, 아직 값을 DB 로 PUT 하지 않게 한다"
 
-        어떻게?
-
-        대박..!
 
 [추가. 컴포넌트가 RE-RENDER 될때에는, "컴포넌트 밖에 있는 것이랑은 아무련 관련이 없다는 것을 알자"]
 
@@ -263,7 +260,7 @@
 
     1) Thunk 는, "액션 생성자"이다.
 
-        : 액션생성자라 하면, "컴포넌트에서, dispatch 를 사용할때, 사용하는 정의된 action 을 호출" 하는 것이 [액션생성자의 생성 ]이라 할 수 있다 
+        : 액션생성자라 하면, "컴포넌트에서, dispatch 를 사용할때, 사용하는 정의된 action 을 호출" 하는 것이 [액션생성자의 생성]이라 할 수 있다 
                 
             import { counterAction } from "../store/index";
 
@@ -288,17 +285,17 @@
                 initialState: initialCounterState,
                     reducers: {
                         increment(state) {
-                        state.counter++;
-                        ...
+                            state.counter++;
+                                ...
                         }
                     }
             })                                              // 슬라이스(리듀서함수) 종료
 
 
             export const sendCartData = ( inputData ) =>{       // 1. Slice(리듀서 함수) 밖에, "일반 자바스크립트 함수" 를 만든다.
-                return async (dispatch)=>{                      // 2. "사용할 함수" 를 반환한다. [비동기함수로], 파라미터에는 dispatch
+                return async (dispatch)=>{                      // 2. "사용할 함수" 를 반환한다. [비동기함수로], disapath(state조작) 을 사용하기위해, 파라미터에는 dispatch
 
-                    dispatch( xxActions.xxx ())                 // 3. dispatch도 가능하다. (알림 같은거 사용하기 위한), 파라미터에 있는 dispatch
+                    dispatch( xxActions.xxx ())                 // 3. dispatch도 가능하다. (알림 같은거 사용하기 위한), 파라미터에 있는 dispatch 덕분에
 
                     const sendRequest = async () =>{            // 4. "fetch 를 할 중첩함수"를 하나 더 만들고, fetch
                         const response = await fetch(...)
@@ -307,22 +304,19 @@
                             throw new Error(...)
                         }
                         const responseData = await response.json()
-                            ...
+                            ...           
+                    }   
 
-                    }
-                    try{
-                        await sendRequest                           // 5. "정의한 중첩함수 실행"
-                        dispatch( xxActions.xxx ()) 
+                    try{ 
+                        await sendRequest                       // 5. "정의한 중첩함수 실행" 
+                        dispatch( xxActions.xxx ())             // 정의 후 바로 사용하기 위해, return 되는 함수가 비동기함수 인것 "async (disapatch) => { ... "
                     }catch(error){
                         dispatch( xxActions.xxx ()) 
                     }
-
-                    
                 }
             }
 
         ** dispatch 는 "파라미터로 쓴 것" 이므로 따로 import 하여 사용하는 것이 아니다.
-
 
 
         3) "useEffect" 를 사용하여, Thunk 액션성생자를 사용한다.
@@ -335,6 +329,8 @@
                 let initial = true                          // 2. useEffect 사용하므로, 초기에는 역시나 안되도록 설정
 
                 function App(){
+                    const dispatch = useDispatch()
+
                     useEffect(()=>{
                         if(initial){
                             initial = false                 // initial 이 true 라면, false 로 바꾸고 뒤에 코드는 실행시키지 않도록 한다.
@@ -348,6 +344,15 @@
 
 
     ==> 하면서 더 익숙해 져야겠다.
+
+    복잡하게 생각 할 것 없다.
+
+    1. "일반 자바스크립트 함수를 하나 만들어서, fetch를 아웃소싱 하는 것이다."
+    2. 다만, "반환 하는 것이, 값이 아니고, async function 일 뿐이다."
+    3. 반환되는 함수 내부에서, State 를 조작하기 위한 dispatch 를 파라미터로 넣고, ( 덕분에, State(UI) 조작 가능 )
+    4. 감싸고 있는 함수는 "일반함수" 이므로, "비동기, 사이드이펙트 함수"를 마음껏 사용할 수 있다.
+
+
 
     여기까지가, [비동기, 사이드이펙트 함수] 의 두가지 사용 방법
 
@@ -369,12 +374,146 @@
 
 
     
-11. 데이터 가져오기 시작.
+11. 데이터 가져오기 [Thunk 액션 생성자 생성]
+    
+    fetch 이다. 액션생성자 Thunk 로 fetch 를 하여, GET 할것인데,
+
+    cart-slice.js 에 넣기에는, 파일이 너무 커진다.
+
+    분할하도록 하자.
+
+    "cart-slice.js" 에는, "기존의 Slice" ( createSlice 로 만든, Slice) 만 남기고,
+
+    "Thunk 액션생성자로 만든, fetch 가 들어간 함수는 모두. cart-actions.js 를 만들어 넣어주자"
+
+    < /store/cart-slice.js >
+
+        import {createSlice} from "@reduxjs/toolkit";
+
+        const initialState = {items:[], totalQuantity:0}
+
+        const cartSlice = createSlice({
+            name : "cart",
+            initialState,
+            reducers : {
+                addCart(state, action){
+                    const newItem = action.payload
+                        ...
+                        state.items.push({...})
+                }
+            }
+        })
+
+        export const cartActions = cartSlice.actions
+
+        export default cartSlice.reducer
 
 
+    < /store/cart-actions.js >
+
+        import { UiActions } from "./store/uiSlice"
+        import { cartActions } from "./store/cart-slice"
+
+        export const sendCartData = (cart) => {             // 1. DB에 값을 넣기 를 위한, PUT fetch 
+            return async (dispatch) => {
+                dispatch(UiActions.showNoti({
+                    ...
+                }))
+
+                const requestData = async () => {
+                    const response = await fetch("...",{
+                        method: "PUT",
+                        body : JSON.stringify(cart),        // 최상위 함수에서 파라미터로 넣어준 값을 넣어주겠다.
+                        ...
+                    })
+
+                    if(!response.ok){
+                        throw new Error("...")
+                    }
+
+                    const responseData = await response.json()
+
+                    dispatch(UiActions.showNoti({
+                        ...
+                    }))
+                }
+
+                await requestData()     // try, catch 를 더 사용해도 괜찮다.
+            }
+        }
+
+        export const getCartData = () => {                      // 2. DB에서의 값을 받기 를 위한, GET fetch 
+            return async (dispatch) =>{
+
+                const fetchData = async () => {
+
+                    const response = await fetch("...")
+
+                    if(!response.ok){
+                        throw new Error(...)
+                    }
+
+                    const responseData = await response.json()  // 값을 받는 것이기 때문에, 받아온 DATA 가 중요하다.
+
+                    return responseData                         // 당연히 return 해주고
+                }
+
+                try{
+                    const cartData = await fetchData()
+
+                    dispatch( cartActions.addItems(cartData) )  // 가져온 값을, cartState 에 넣도록 cartAction 을 dispatch
+
+                }catch(error){
+
+                    dispatch(UiActions.showNoti({
+                        name: "error",
+                        ...
+                    }))
+                }            
+            }   
+        }
+
+12. 데이터 가져오기 [사용]
+
+    : 역시나, "메인이자", "깔끔한 코드"가 있는, "App.js" 가, "fetch 하여 데이터를 가져오는 함수를 실행하기 딱 좋다."
+
+    < App.js >
+
+    import { useSelector, useDispatch } from "react-redux"
+    import { sendCartData, getCartData } from "../store/cart-actions"
+
+    let initial = true
+
+    function App(){
+        const cart = useSelector((state) => state.cart)
+        const dispatch = useDispatch()
+
+
+        useEffect(()=>{
+            dispatch(getCartData())             // 앱이 시작되면, DB 의 Data 를 cartState 에 집어넣음
+        },[dispatch]) 
+
+        
+        useEffect(()=>{
+            if(initial){
+                initial = false 
+                return
+            }
+            dispatch(sendCartData(cartData))    // 앱이 시작될때를 제외하고, cart가 바뀌면, DB 에 값을 PUT 함
+           
+            
+        },[cart, dispatch])
+    }
+
+
+    추후, 논리에 따라 버그를 수정한다.
             
 
+13. 리덕스 DEVTOOL 사용하여, 디버깅 해보기
 
+    REDUX DEVTOOL 을 검색한다.
+
+    CROME 의 앱스토어에서 설치 가능하다 (따로 앱이 있지만, 브라우저의 앱이 편하겠다)
                 
 
 [ 키포인트 모음 ]
