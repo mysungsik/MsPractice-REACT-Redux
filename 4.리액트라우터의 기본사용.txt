@@ -1,0 +1,397 @@
+1. 최신버젼은 버젼6, 하지만 나는 일단 버젼5 배우고 나중에 옮기던가 해보자
+
+2. npm install react-route-dom@5
+
+    https://www.npmjs.com/package/react-router-dom
+
+3. 리액트 라우트는, 조건부 렌더와 동일하다 볼 수 있다.
+
+    조건부 렌더는 "조건이 true 라면, 해당 컴포넌트를 렌더"
+        { true && <Component/ >}
+
+    라우트는, "해당 URL 에 접속하면 해당 컴포넌트를 렌더"
+
+4. import { Route } from "react-router-dom" [ 기본적인 Route 만들기 ]
+
+    라우터를 불러오는 방법
+
+    <App.js 등 어디든>
+
+        <Route path="/welcome">     // path 를 지정하고 불러온다.
+            <Welcome />
+        </Route>
+
+        <Route path={"/products"}>
+            <Products />
+        </Route>
+
+5. import { BrowserRouter } from "react-router-dom";    [ 리액트 라우트 기능 잠금 해제]
+
+
+    <index.js>
+        import { BrowserRouter } from "react-router-dom";   // 라우트의 기능을 잠금해제한다.
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
+        );
+
+6. import { Link } from "react-router-dom";  앵커태그를 대신할 Link to={...}  [ 리액트 라우트 이동 ]
+
+    앵커태그를 사용하면, 새 HTTP 요청으로, 완전히 새로운 HTML 을 가져와 "새로 고침" 한다.
+    하지만, 그렇게 한다면, REACT 를 사용하는 (가상 DOM 의 장점) 이유가 사라진다.
+
+    REACT는 DOM 의 "부분적인 교체(추가, 삭제)" 를 사용해, 빠른 유저경험을 제공한다.
+    전체 페이지를 완전히 교체하는 것은 불필요한 낭비를 유발한다.
+
+    REACT에 걸맞게, 페이지를 이동 시키려면, "Link" 를 사용한다.
+
+    1. href 가 아닌 to 
+
+        import styles from "./main-header.module.css";
+        import { Link } from "react-router-dom";
+        
+        function MainHeader() {
+            return (
+                <ul className={styles.main_header}>
+                    <li>
+                        <Link to="/welcome"> 웰컴</Link>
+                    </li>
+                    <li>
+                        <Link to="/products"> 프로덕트 </Link>
+                    </li>
+                </ul>
+            );
+        }
+        export default MainHeader;
+    
+    2. css 는 a 를 그대로 따른다.
+
+        .main_header a {
+            color: gold;
+        }
+  
+        .main_header a:hover {
+            color: red;
+        }
+        
+7. import { NavLink } from "react-router-dom";   => Link 이지만, className 을 추가할 수 있는 Link    
+
+    1. Link 인데 className 추가 가능한 Link => NavLink 
+
+        "추가방법 : activeClassName"
+
+        import styles from "./main-header.module.css";
+        import { Link } from "react-router-dom";
+        
+        function MainHeader() {
+            return (
+                <ul className={styles.main_header}>
+                    <li>
+                        <NavLink to="/welcome" activeClassName={styles.welcomeLink}> 웰컴</Link>
+                    </li>
+                    <li>
+                        <NavLink to="/products" activeClassName={styles.productsLink}> 프로덕트 </Link>
+                    </li>
+                </ul>
+            );
+        }
+        export default MainHeader;
+
+8. 동적 라우트 만들기 [ path = "/product/:productName"]
+
+    " : " 을 사용하여, 이후 들어가는 모든 URL 에 대하여, 동적으로 들어가지는 페이지를 만든다.
+
+        import { Route } from "react-router-dom";
+        import Products from "./pages/product";
+        import ProductDetail from "./pages/product-detail";
+
+        function App() {
+            return (
+                <div>
+                    <div>
+                        <Route exact path={"/products"}>        // products 를 들어가면 이 페이지
+                            <Products />
+                        </Route>
+                        <Route path={"/products/:productsName"}>    // "products/ 이후 아무거나 입력"하면 이 페이지
+                            <ProductDetail />
+                        </Route>
+                    </div>
+                </div>
+            );
+        }
+
+        export default App;
+
+
+    ex) "localhost:3000/products/books"     =>   <ProductDetail />
+        "localhost:3000/products/chairs"    =>   <ProductDetail />
+                    ...
+
+9. 어? 그렇게 되니까, 페이지가 중복해서 나옵니다. [ Switch 와 exact 의 사용]
+
+            <Products />        컴포넌트와
+            <ProductDetail / >  컴포넌트가 동시에 뜹니다
+
+        react-router-dom 의 특징이다.
+
+    "localhost:3000/products/books"  라고 하면,
+
+        <Route path={"/products"}>                  에 의해, "어? /products" 로 "시작"하네? 얘도 렌더하자
+        <Route path={"/products/:productsName"}>    에 의해, "어? /products/아무거나" 로 시작하네? 얘도 렌더
+
+    
+    즉, "react-router-dom" 은 기본적으로, "전체 파일을 보고", "시작부분이 일치"하는 모든 "URL 에 대하여", "모두 렌더" 한다.
+    그러므로, products 는 "반드시 /products" 라는 URL 에만 렌더되도록, "exact" 옵션을 적용시킨다.
+    또한, "Switch" 로 감싸 "하나라도 부합하는 조건"이 나오면, "더이상 찾지 않고", "거기에서 렌더를 끝내도록 시킨다."
+
+            import {Switch} from "react-router-dom"
+            
+                <Switch>                                // "Switch" 로 감싼다
+                    <Route exact path={"/products"}>    // "exact" 로 정확히 일치하는 항목인지를 찾는다.
+                        <Products /> 
+                    </Route>
+                    <Route path={"/products/:productsName"}>
+                        <ProductDetail /> 
+                    </Route>    
+                </Switch>                               // Switch 로 감싼다
+
+
+    => 이제 "/products" 라는 "딱 이 URL" 에만  <Products />  컴포넌트가 렌더된다.
+    => 또한, 하라도 맞는 URL 이 나오면, 일치하는 항목을 더이상 찾지 않는다.
+
+=> 이는 "App.js 의 메인페이지에 있는 Header처럼 중복 페이지를 만들고 싶을때는 사용하지 않는다."
+    생각해봐라, 지금 Header가 있는 이유는, App.js 의 MainHeader 와 아래의 페이지들이 동시에 렌더 되고 있기 때문이다.
+
+    "Route(URL)는 다르지만", [URL 의 같은 부분이 존재하면, 동시에 렌더]하고 싶다면, Switch와 exact를 제거하면 된다.
+
+10. import { useParams } from "react-router-dom"         => 동적 라우트에 각각 다른 값을 입력받기
+
+        "localhost:3000/products/chairs"
+        "localhost:3000/products/books"
+        "localhost:3000/products/desks"
+
+    는 모두, 같은 페이지에 의해 렌더되는 것들이다.
+
+    모두 다른 값을 받도록 만들어보자.
+
+
+    <App.js>
+
+                ...
+
+        <Route path={"/products/:productsName"}>
+            <ProductDetail />
+        </Route>
+
+                ...
+
+    <product-detail page >
+
+        import { useParams } from "react-router-dom";
+
+        function ProductDetail() {
+        const productName = useParams();
+        
+        console.log(productName);       // 아래 각각 페이지에 들어 갈때,
+        return (
+            <div>
+            <h1> 상세사항 </h1>
+            </div>
+        );
+        }
+        
+        export default ProductDetail;
+
+ 
+    "localhost:3000/products/chairs"    // {productsName: 'chairs'}
+    "localhost:3000/products/books"     // {productsName: 'books'}
+    "localhost:3000/products/desks"     // {productsName: 'desks'}
+
+    ==> 동적 페이지로 " :productsName " 를 받았다.
+
+
+    ** useParams 를 사용하면, "동적 라우트로 받은 이름" 으로, 값이 입력된다.
+
+        <Route path={"/products/:productsName"}>    // productName 이 "키" 가 된다.
+            <ProductDetail />
+        </Route>
+
+        "localhost:3000/products/desks"             // desks 가 "값" 이 된다.
+            
+11. 중첩 라우트 사용하기 [ 라우트로 들어간 다른 페이지 내의 라우트]
+
+    "라우트 내"에서, "다시 라우트에 의한 평가를 할 수 있다"
+    
+    이게 무슨 소리냐.
+
+            <App.js>
+
+                import { Route } from "react-router-dom";
+                import Welcome from "./pages/welcome";
+
+                function App() {
+                    return (
+                        <div>
+                            <Route path="/welcome">
+                                <Welcome />
+                            </Route>
+                        </div>
+                    );
+                }
+
+                export default App;
+
+    "welcome URL 에 접근했다"
+    http://localhost:3000/welcome
+
+
+            <Welcome.js>
+
+                function Welcome() {
+                    return (
+                        <div>
+                            웰컴!
+                        </div>
+                    );
+                }
+
+                export default Welcome;
+
+    "이런 페이지가 렌더 되었을 것이다."
+    하나 더 깊게 들어가고 싶다.
+
+            <Welcome.js>
+
+                import { Route } from "react-router-dom";
+
+                function Welcome() {
+                    return (
+                        <div>
+                            웰컴!
+                            <Route path="/new-user">        // 현 페이지는 /welcome 인데, 중첩된 Router의 path 는 /new-user
+                                <p> 신입이냐!</p>
+                            </Route>
+                        </div>
+                    );
+                }
+
+                export default Welcome;
+
+    "과연 저 Route 는 작동 할 것인가?"
+    아니, 작동하지 않는다.
+
+    "현재 URL" 은  http://localhost:3000/welcome,
+    "현재 렌더된 페이지"는 Welcome.js 페이지이다.
+
+    "welcome.js 에 있는 저 Route"는, "App.js 에서 Welcome.js 가 활성화 되었을때,"
+    즉, http://localhost:3000/welcome, 에 "접근해야만 평가가 시작"된다.
+
+    http://localhost:3000/new-user, 에 들어간다 한들, 저 Route 는 평가되고 실행되지 않는다.
+
+   [ 해당 URL 에 접근하지 않으면 Welcome 에 중첩되어 있는 저 Route 는 절대로 평가 될 일이 없다]
+   [ 해당 URL 에 접근 해야만, 저 Route 가 평가되기 시작하고, 저 URL 에 들어 갈 일이 있다는 말이다]
+   [ 그런데, /new-user 라는 URL은 평가가 될 수 있을까? 아니다]
+   [ 적어도, 시작 지점은 /welcome 으로 되어야만 중첩되어 있는 URL 이 평가 될 수 있다]
+
+        그러므로, 
+
+            <Welcome.js>
+
+            import { Route } from "react-router-dom";
+
+            function Welcome() {
+                return (
+                    <div>
+                        웰컴!
+                        <Route path="/welcome/new-user">     // 최소한, 상위 Route 의 URL 은 가져와야한다.
+                            <p> 신입이냐!</p>
+                        </Route>
+                    </div>
+                );
+            }
+
+            export default Welcome;
+
+    또한 당연하게도,
+
+    http://localhost:3000/welcome/new-user, 에 접근하면
+
+    App.js 에 있는 <MainHeader>
+    welcome.js 에 있는 "기본 컴포넌트"
+    welcome.js 에   "Route 안에서 렌더되는 컴포넌트"
+
+    세가지가 동시 화면에 렌더 될 것이다.
+
+            
+12. import {Redirect} from "react-router-dom"  =>    리디렉션을 사용해보자.
+
+            import { Route, Redirect, Switch } from "react-router-dom";
+            import MainHeader from "./components/headers/main-header";
+            import Welcome from "./pages/welcome";
+            import Products from "./pages/product";
+            import ProductDetail from "./pages/product-detail";
+
+            function App() {
+                return (
+                    <div>
+                        <header>
+                            <MainHeader />
+                        </header>
+                        <div>
+                            <Switch>
+                                <Route exact path="/">                      // "/"  라고 입력하면
+                                    <Redirect to="/welcome" />              // "welcome" 페이지로 이동한다.
+                                </Route>
+                                <Route path="/welcome">
+                                    <Welcome />
+                                </Route>
+                                <Route exact path={"/products"}>
+                                    <Products />
+                                </Route>
+                                <Route path={"/products/:productsName"}>
+                                    <ProductDetail />
+                                </Route>
+                            </Switch>
+                        </div>
+                    </div>
+                );
+            }
+
+            export default App;
+
+    ** [exact 복습]
+
+        : 만약 "exact" 를 사용하지 않았다면?
+                
+            function App() {
+                return (
+                    <div>
+                        <header>
+                            <MainHeader />
+                        </header>
+                        <div>
+                            <Switch>
+                                <Route path="/">                      // "exact"를 안썻다면?
+                                    <Redirect to="/welcome" />        // "welcome" 페이지로 이동한다.
+                                </Route>
+                                <Route path="/welcome">
+                                    <Welcome />
+                                </Route>
+                                ...
+                )
+            }
+
+        <Switch> 에 의해 "무언가 그것에 만족하면 더 이상 찾지 않을 것이다." => "한 Route 만이 작동 할 것이다"
+        "모든 페이지의 시작은 ' / ' 이다"   => 모든 페이지가 "/welcome" 으로 Redirect 될것이다.
+
+        ==> "뭔 짓을 해도 welcome 페이지로 가진다."
+
+            
+
+
+
+
+
