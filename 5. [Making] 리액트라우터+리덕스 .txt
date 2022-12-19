@@ -1,0 +1,1014 @@
+0. 기능 및 사용 정리
+    : 명언 정리기
+
+    1. 명언 과 사람 이름이 표시
+    2. 명언에 얽힌 유래를 디테일 페이지에서
+
+1. 기본 베이스 설치
+
+    리덕스툴킷 : npm i @reduxjs/toolkit
+    리액트 리덕스 : npm i react-redux
+    리액트 라우터 : npm i react-router-dom@5    // 원한다면 6 버젼으로
+
+2. 일단 스토어 생성 ["@reduxjs/toolkit", configureStore, createSlice ] 
+
+    import { configureStore, createSlice } from "@reduxjs/toolkit";
+
+    const msSlice = createSlice({
+        name: "base",
+        initialState: { ms: "nothing" },
+        reducers: {
+            makeMs(state) {
+            state.ms = "thing";
+            },
+        },
+    });
+
+    export const msActions = msSlice.actions;
+
+    const rootStore = configureStore({
+        reducer: {
+            ms: msSlice.reducer,
+        },
+    });
+
+    export default rootStore;
+
+3. 일단 스토어 연결, 라우터 연결 ["react-router-dom" , BrowserRouter , "react-redux" , Provider] 
+
+    import React from "react";
+    import ReactDOM from "react-dom/client";
+    import "./index.css";
+    import App from "./App";
+    import { BrowserRouter } from "react-router-dom";   // 라우터
+    import { Provider } from "react-redux";             // 프로바이더
+    import rootStore from "./store/index";              // 스토어
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(
+        <Provider store={rootStore}>        // 연결
+            <BrowserRouter>                 // 라우터 연결
+                <App />
+            </BrowserRouter>
+        </Provider>
+    );
+
+4. 메인 Layout, 헤더 생성, 연결 [ "react-router-dom", Link, NavLink ] 
+
+    < /components / UI / Layout/ headers / mainHeader.js> 
+
+        import { Link, NavLink } from "react-router-dom";
+        import styles from "./mainHeader.module.css";
+        
+        const MainHeader = () => {
+            return (
+                <ul className={styles.main_header}>
+                    <div className={styles.logo}>
+                        <NavLink to={"/"}>
+                            <h1>로고</h1>
+                        </NavLink>
+                    </div>
+                    <div className={styles.menu}>
+                        <li>
+                            <Link to={"/quotes"}> 명언</Link>
+                        </li>
+                        <li>
+                            <Link to={"/new-quotes"}> 새 명언</Link>
+                        </li>
+                    </div>
+                </ul>
+            );
+        };
+        
+        export default MainHeader;
+
+    < /components / UI / Layout / Layout.js>
+
+        import { Fragment } from "react";
+        import MainHeader from "./headers/mainHeader";
+
+        const Layout = (props) => {
+            return (
+                <Fragment>
+                    <MainHeader />
+                    <main>{props.children}</main>
+                </Fragment>
+            );
+        };
+
+        export default Layout;
+
+
+    < index.js >
+
+        import React from "react";
+        import ReactDOM from "react-dom/client";
+        import "./index.css";
+        import App from "./App";
+        import { BrowserRouter } from "react-router-dom";
+        import { Provider } from "react-redux";
+        import rootStore from "./store/index";
+        import Layout from "./components/UI/layout/layout";
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(
+            <Provider store={rootStore}>
+                <BrowserRouter>
+                    <Layout>        // Layout 으로 감싸기
+                        <App />
+                    </Layout>
+                </BrowserRouter>
+            </Provider>
+        );
+
+    
+
+5. 기본 페이지 작업 [ "react-router-dom", useParams ]
+
+    <pages / quotes.js>
+
+            const Quotes = () => {
+                return <div> 명언들 </div>;
+            };
+
+            export default Quotes;
+
+    
+    <pages / quotes-detail.js>
+
+            import { useParams } from "react-router-dom";       // useParams 로 동적 세그먼트("키")의 값("값") 을 불러올 수 있다.
+
+            const QuotesDetail = () => {
+            const params = useParams();
+                return (
+                    <div>
+                        <h1>명언 디테일</h1>
+                        <p> 명언 ID : {params.quotesId}</p>
+                    </div>
+                );
+            };
+            export default QuotesDetail;
+
+
+    <pages / new-quotes.js>
+
+            const NewQuotes = () => {
+                return <div> 새 명언 </div>;
+            };
+
+            export default NewQuotes;
+            
+
+
+6. 기본 라우터 작업 ["react-router-dom", Route, Switch, Redirect]
+
+    import { Route, Switch, Redirect } from "react-router-dom";
+    import Quotes from "./pages/quotes";
+    import QuotesDetail from "./pages/quotes-detail";
+
+    import NewQuotes from "./pages/new-quotes";
+
+    function App() {
+        return (
+            <div>
+                <Switch>
+                    <Route exact path={"/quotes"}>
+                        <Quotes />
+                    </Route>
+                    <Route path={"/quotes/:quotesId"}>
+                        <QuotesDetail />
+                    </Route>
+                    <Route path={"/new-quotes"}>
+                        <NewQuotes />
+                    </Route>
+                </Switch>
+            </div>
+        );
+    }
+
+    export default App;
+
+
+7. 필요한 컴포넌트 폴더들 생성하고, 작업준비 해두자
+ 
+    1. 컴포넌트 / 명언 폴더
+    2. 컴포넌트 / 명언 디테일 폴더
+    3. 컴포넌트 / 새 명언 폴더
+
+    
+[베이스 끝, 진짜 작업 시작]
+
+8. 디테일 페이지 URL에서,  /comment 가 추가되면, 댓글창 보이게하기 [ 동적 페이지에 대한, 중첩 라우트 ]
+
+    < quotes-detail page>
+
+        import { useParams } from "react-router-dom";
+        import QuotesDetailComponent from "../components/quotes-detail/quotes-detail";
+        
+        const QuotesDetail = () => {
+            const params = useParams(); //  /:quotesId
+            const quotesId = params.quotesId;
+        
+            return (
+            <div>
+                <QuotesDetailComponent quotesId={quotesId}/>
+            </div>
+            );
+        };
+        export default QuotesDetail;
+
+
+    < quotes-detail Component >
+
+            import { Route } from "react-router-dom";
+            import QuotesComment from "./quotes-comment";
+            import styles from "./quotes-detail.module.css";
+            
+            const QuotesDetailComponent = (props) => {
+                const { quotesId } = props;
+                return (
+                    <div>
+                        <div className={styles.title}>
+                            <h1>명언 디테일</h1>
+                            <p> 명언 ID : {quotesId}</p>
+                        </div>
+                        <div className={styles.comment}>
+                            <Route exact path={`/quotes/${quotesId}/comment`}>
+                                <QuotesComment quotesId={quotesId} />
+                            </Route>
+                        </div>
+                    </div>
+                );
+            };
+            
+            export default QuotesDetailComponent;
+
+    < quotes-comment Component >
+
+        const QuotesComment = (props) => {
+            const { quotesId } = props;
+            return <div>{quotesId} 에 대한 코멘트</div>;
+        };
+        export default QuotesComment;
+      
+
+9. Redux 를 활용하여, Quotes 들을 만든 후, Component 에 적용하기 [ redux , Array.map()]
+
+    <store/quotes-slice.js>
+
+        import { createSlice } from "@reduxjs/toolkit";
+
+        const initialState = {
+            allQuotes: [
+                { id: "q1", content: "네 자신을 알라", author: "ms" },
+                { id: "q2", content: "가는말이 고와야 오는말도 곱다", author: "js" },
+                { id: "q3",content: "천길 물길은 알아도 한길 사람 속은 모른다.",author: "kr",},
+            ],
+        };
+
+        const quotesSlice = createSlice({
+            name: "qoutes",
+            initialState,
+            reducers: {
+                showQuotes(state) {
+                console.log(state);
+                },
+            },
+        });
+
+        export const quotesActions = quotesSlice.actions;
+
+        export default quotesSlice.reducer;
+
+    <store/index.js>
+
+        import { configureStore } from "@reduxjs/toolkit";
+        import quotesSlice from "./quotes-slice";
+
+        const rootStore = configureStore({
+            reducer: {
+                quotesSlice: quotesSlice,
+            },
+        });
+
+        export default rootStore;
+
+    <components / quotes / all-quotes.js >
+
+        import { useSelector } from "react-redux";
+
+        const AllQuotesComponent = () => {
+            const allQuotes = useSelector((state) => state.quotesSlice.allQuotes);
+
+            const quotesComponents = allQuotes.map((item) => (
+                <li key={item.id}>
+                    <div>
+                        <h3>{item.content}</h3>
+                        <p>{item.author}</p>
+                    </div>
+                    <div>
+                        <button> 큰 화면 보기</button>
+                    </div>
+                </li>
+            ));
+
+            return (
+                <div>
+                <ul>{quotesComponents}</ul>
+                </div>
+            );
+        };
+
+        export default AllQuotesComponent;
+
+
+10. Redux 활용하여, 새 Quotes 추가하기 [ redux, react-redux, useDispatch]
+
+        import { useState } from "react";
+        import { useDispatch } from "react-redux";
+        import { quotesActions } from "../../store/quotes-slice";
+
+        const NewQuotesForm = () => {
+            const [idState, setIdState] = useState("");
+            const [authorState, setAuthorState] = useState("");
+            const [contentState, setContentState] = useState("");
+            const dispatch = useDispatch();
+
+            const idInputHandler = (e) => {
+                setIdState(() => e.target.value);
+            };
+            const authorInputHandler = (e) => {
+                setAuthorState(() => e.target.value);
+            };
+            const contentInputHandler = (e) => {
+                setContentState(() => e.target.value);
+            };
+
+            const submitHandler = (e) => {
+                e.preventDefault();
+
+                const quotes = {
+                id: idState,
+                author: authorState,
+                content: contentState,
+                };
+
+                dispatch(quotesActions.addQuotes({ quotes }));
+
+                setIdState("");
+                setAuthorState("");
+                setContentState("");
+            };
+
+            return (
+                <form>
+                    <div>
+                        <label htmlFor={"id"}> 아이디 </label>
+                        <input
+                        type={"text"}
+                        id={"id"}
+                        value={idState}
+                        onChange={(e) => idInputHandler(e)}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor={"author"}> 저자 </label>
+                        <input
+                        type={"text"}
+                        id={"author"}
+                        value={authorState}
+                        onChange={(e) => authorInputHandler(e)}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor={"content"}> 명언 </label>
+                        <input
+                        type={"text"}
+                        id={"content"}
+                        value={contentState}
+                        onChange={(e) => contentInputHandler(e)}
+                        />
+                    </div>
+                    <div>
+                        <button onClick={submitHandler}> 추가하기 </button>
+                    </div>
+                </form>
+            );
+        };
+        export default NewQuotesForm;
+
+    
+11. Quotes 에 달려있는 세부 페이지를 들어가면, QuotesDetail 페이지로 이동하고, 크게 보이게 하기, 코멘트 창 도 보이게 하기 [무한증식 버튼의 각각의 URL]
+
+    <allQuotes 페이지>     : 모든 Quotes -> "QuotesDetail" 로 이동하는 "Link"
+
+        const AllQuotesComponent = () => {
+            const allQuotes = useSelector((state) => state.quotesSlice.allQuotes);
+        
+            const quotesComponents = allQuotes.map((item) => (
+            <li key={item.id}>
+                <div>
+                    <h3>{item.content}</h3>
+                    <p>{item.author}</p>
+                </div>
+                <div>
+                    <Link to={`/quotes/${item.id}`}> 큰 화면 보기</Link>        // 동적 URL
+                </div>
+            </li>
+            ));
+                    ...
+
+    <QuotesDetail 페이지> : QuotesDetail 를 표시, "중첩 Route" 를 통해, quotes/quotesId/comment URL 로 이동하면, "commnet 컴포넌트도 함께 렌더"
+
+            const QuotesDetailComponent = (props) => {
+                const { quotesId } = props;
+                return (
+                <div>
+                    <div className={styles.title}>
+                        <h1>명언 디테일</h1>
+                        <p> 명언 ID : {quotesId}</p>
+                        <Link to={`/quotes/${quotesId}/comment`}> 코멘트 열기 </Link>
+                    </div>
+                    <div className={styles.comment}>
+                        <Route exact path={`/quotes/${quotesId}/comment`}>      // 중첩 라우트
+                            <QuotesComment quotesId={quotesId} />               // quotes/:quotesId/comment 로 이동하면, 함께 렌더
+                        </Route>                                                // quotes/:quotesId 는 "exact 가 아니기 때문에" 뒤에 뭐가 붙어도, 렌더되는것
+                    </div>
+                </div>
+                );
+            };
+            
+            export default QuotesDetailComponent;
+
+    < QuotesComment 컴포넌트 >
+
+        const QuotesComment = (props) => {
+            const { quotesId } = props;
+            return <div>{quotesId} 에 대한 코멘트</div>;
+        };
+        export default QuotesComment;
+        
+            
+12. 현재 아무거나 URL 에 쳐도, Quotes 가 "있는 것 처럼" 나온다.
+
+    1. QuotesDetail 페이지에서, QuotesDetailComponent 로, params 만 넘기고 있는 상태이고,
+    2. QuotesDetailComponent 에서는, 아무런 content 를 표시하지 않는 상태이기 때문
+
+
+    "QuotesDetail 페이지" 에서 값을 받아, "QuotesDetailComponent" 로 일단 넘기자
+    => 그럼에도, 만약, DB 에 없는, quotesId 를 사용하여, URL 에 들어간다면?
+
+    => 그냥 오류가 나오겠지
+
+13. 그러므로, 이상한 URL 을 적으면, 다른 컴포넌트가 로드되도록 만들기
+
+        import { Link, Route } from "react-router-dom";
+        import QuotesComment from "./quotes-comment";
+        import styles from "./quotes-detail.module.css";
+        import { useSelector } from "react-redux";
+
+        const QuotesDetailComponent = (props) => {
+        const quoteState = useSelector((state) => state.quotesSlice.allQuotes);
+        const { quotesId } = props;
+
+        const selectedQuote = quoteState.find((item) => item.id === quotesId);
+
+        if (!selectedQuote) {                       // 해당 id 의 명언이 없으면,
+            return <p>you have wrong URL</p>;       // = 잘못된 URL 일 경우, 이 메시지가 렌더된다.
+        }
+
+        return (
+            <div>
+                <div className={styles.title}>
+                    <h1>명언 디테일</h1>
+                    <p> 명언 ID : {quotesId}</p>
+                    <Link to={`/quotes/${quotesId}/comment`}> 코멘트 열기 </Link>
+                </div>
+                <main>
+                    <h2> {selectedQuote.content}</h2>
+                    <p> {selectedQuote.author}</p>
+                </main>
+                <div className={styles.comment}>
+                    <Route path={`/quotes/${quotesId}/comment`}>
+                    <QuotesComment quotesId={quotesId} />
+                    </Route>
+                </div>
+            </div>
+        );
+        };
+
+        export default QuotesDetailComponent;
+
+14. Not Found Page 만들고 적용시키기 [ path = "*"  (와일드카드), 마지막에 위치시키기] 
+
+        import { Route, Switch } from "react-router-dom";
+        import AllQuotes from "./pages/quotes-all";
+        import QuotesDetail from "./pages/quotes-detail";
+
+        import NewQuotes from "./pages/new-quotes";
+
+        function App() {
+            return (
+                <div>
+                    <Switch>
+                        <Route exact path={"/quotes"}>
+                            <AllQuotes />
+                        </Route>
+                        <Route path={"/quotes/:quotesId"}>
+                            <QuotesDetail />
+                        </Route>
+                        <Route path={"/new-quotes"}>
+                            <NewQuotes />
+                        </Route>
+                        <Route path={"*"}>      // 위와 일치하는 모든 페이지가 없다면, [모든 url을 받는 * 라우트로 들어간다.]
+                            <NotFound />        // 그러면, NotFound 페이지가 렌더된다.
+                        </Route>
+                    </Switch>
+                </div>
+            );
+        }
+
+        export default App;
+
+15. useHistory 를 사용하여, "제출하고나면, 페이지를 이동시키기" [ {useHistory} from "react-router-dom"]
+
+    <사용>
+
+        history.push("...")        // 기록 있음    = 뒤로가기 가능
+        history.replace("...")     // 기록 없어짐  = 뒤로가기 불가
+
+    <코드>
+
+        import {useHistory} from "react-router-dom"
+
+        const xxPage () =>{
+            const history = useHistory()
+
+            const submitHandler = (e) => {
+                e.preventDefault();
+            
+                const quotes = {
+                  id: idState,
+                  author: authorState,
+                  content: contentState,
+                };
+            
+                dispatch(quotesActions.addQuotes({ quotes }));
+            
+                history.replace("/quotes");
+              };
+
+           
+        }
+
+       
+
+16. [onFocus] 리스너와 함께, [Prompt] 로," 사용자가, 양식을 입력하다가 페이지를 떠나려 한다면", 한번 물어보아서 양식을 없애는 실수를 방지하기
+
+    import { Prompt } from "react-router-dom"
+
+    Prompt : "렌더" 하는 요소로,
+        1) when : 언제 Prompt 를 실행시킬지(참이라면 실행)
+        2) message : 무엇
+
+
+    <코드>
+
+    import { Prompt, useHistory } from "react-router-dom";
+
+    // 제출 핸들러
+        const submitHandler = (e) => {
+        e.preventDefault();
+    
+        const quotes = {
+            id: idState,
+            author: authorState,
+            content: contentState,
+        };
+    
+        dispatch(quotesActions.addQuotes({ quotes }));
+    
+        history.replace("/quotes");
+        };
+    
+        // 뒤로가기 물어보기
+        const onFocusHandler = () => {
+        setFocused(true);
+        };
+    
+        // 제출할때는 focuse 제거하여, Prompt 안나오게
+        const deleteFocusHandler = () => {
+        setFocused(false);
+        };
+    
+        return (
+        <Fragment>
+            <Prompt when={focused} message={(location) => "정말로 나가시겠습니까?"} />
+    
+            <form onFocus={onFocusHandler} onSubmit={submitHandler}>        // form 에 submit 을 달아놓아야
+            <div>
+                <label htmlFor={"id"}> 아이디 </label>
+                        ...
+                value={contentState}
+                onChange={(e) => contentInputHandler(e)}
+                />
+            </div>
+            <div>
+                <button onClick={deleteFocusHandler}> 추가하기 </button>        // 제출 직전, focus 를 없애, Prompt 의 실행을 막는다
+            </div>
+            </form>
+        </Fragment>
+
+
+[추가.팁 //  리덕스 스토어에서 참조한 State 를 "바로 사용하지 말고, 한번 빼서 사용하면 안전하다."]
+
+    const AllQuotesComponent = () => {
+      const allQuotes = useSelector((state) => state.quotesSlice.allQuotes);
+      const location = useLocation();
+      const [rearrange, setRearrange] = useState(false);
+    
+      const data = [...allQuotes]; 
+    
+17. [ useHistory, useLocation , URLSearchParams ] 쿼리 매개변수로, 페이지변동없이, 동작하는 페이지 작동하기 준비 [ 오름차순 내림차순 정렬 등 ]
+
+    : 전체 item 을 버튼을 누를때, 정렬되도록 만들어보자
+
+    1. 정렬 함수를 만든다.
+    2. 버튼을 누르면 "useHistory" 에 의해, [ URL ? xx=yyy ] 형식으로, 쿼리 매개변수가 입력되도록 URL 을 입력한다.
+    3. "useLocation" 쿼리매개변수 뒤의 키(xx) 의 값(yyy) 를 읽어온다.
+    4. 읽어온, 쿼리 매개변수의 값을 가지고, 정렬함수를 조건에 맞추어 실행한다.
+
+    <상세>
+        useHistory =>
+            const history = useHistory()
+            history.push("/?xx=yyy")
+
+        useLocation =>
+            const location = useLocation()
+            console.log(location)
+
+                [/quotes]
+                    hash :  ""
+                    key: "bka7zu"
+                    pathname: "/quotes"
+                    search: ""
+                    state: undefined
+
+                [/quotes?ms=asb]
+    
+                    hash: ""
+                    pathname: "/quotes"
+                    search: "?ms=asb"       // [쿼리 매개변수] search 에 값이 등록된다.
+                    state: undefined
+
+            console.log(location.search);   // ?ms=asb
+
+        URLSearchParams =>  [자바스크립트 내장 메서드로, ? 이후의 params 값을 가져올때 사용한다.]
+                            .get() 을 통해, key (? 이후 키) 를 입력하면
+                            value(= 이후 값) 를 얻는다.
+
+            const queryParameter = new URLSearchParams(location.search);
+            queryParameter.get("ms");  // asb
+        
+18. [ useHistory, useLocation , URLSearchParams ] 쿼리 매개변수로, 페이지변동없이, 동작하는 페이지 작동하기 시작 [ 오름차순 내림차순 정렬 등 ]
+
+        import { useSelector } from "react-redux";
+        import { Link, useHistory, useLocation } from "react-router-dom";
+        
+        const reArrangeQuotes = (quotes, isAscending) => {      // 0. sort 함수를 정의한다. (컴포넌트 함수 밖에 : 그저 헬퍼 함수일 뿐이므로)
+            return quotes.sort((A, B) => {
+                if (isAscending) {
+                    return A.content > B.content ? 1 : -1;
+                } else {
+                    return B.content > A.content ? 1 : -1;
+                }
+            });
+        };
+        
+        const AllQuotesComponent = () => {
+            const allQuotesState = useSelector((state) => state.quotesSlice.allQuotes);
+            const history = useHistory();
+            const location = useLocation();
+        
+            const allQuotesData = [...allQuotesState];
+        
+            const queryParams = new URLSearchParams(location.search);   // 1. 쿼리 파라미터 빼온다.
+            const arrageRule = queryParams.get("arrangeRule");          // 2. 쿼리 파라미터의 "값" 을 뺀다.
+        
+            const isAscending = arrageRule === "asc";                   // 3. 맞다면, 오름차순정렬
+        
+            reArrangeQuotes(allQuotesData, isAscending);                // 4. 정의한 함수를 사용한다.
+        
+            const arrangeHandler = () => {
+                history.push("/quotes?arrangeRule=" + (isAscending ? "desc" : "asc")); // 0.버튼을 누르면, 쿼리파라미터 생성
+            };
+        
+            const quotesComponents = allQuotesData.map((item) => (
+                <li key={item.id}>
+                    <div>
+                        <h3>{item.content}</h3>
+                        <p>{item.author}</p>
+                    </div>
+                    <div>
+                        <Link to={`/quotes/${item.id}`}> 큰 화면 보기</Link>
+                    </div>
+                </li>
+            ));
+        
+            return (
+                <div>
+                    <div>
+                        <button onClick={arrangeHandler}>
+                            {isAscending ? "내림차순" : "오름차순"}
+                        </button>
+                    </div>
+                    <ul>{quotesComponents}</ul>
+                </div>
+            );
+        };
+        
+        export default AllQuotesComponent;
+        
+    ** 이게 왜 "재평가되고, 눈에 보기게 실행되는가? State 를 사용하지도 않았는데?"
+        => "useHistory" 를 사용하여 "페이지가 변경되었기 때문이다."
+
+19. 중첩 라우트를, 색다르게 사용해보기. [ State를 쓰지않고, 클릭 버튼 없애기 ]
+
+    : 코멘트 열기 버튼을 "State" 를 사용하지않고, "중첩 Route" 를 이용하여, "사라지게해보자"
+
+    <힌트>
+        Route 는 기본적으로는, "시작부분이 같으면 전부 렌더된다."
+        Rotue 는 "exact" 옵션을 사용하면, "완전히 똑같아야만 렌더 된다."
+
+
+    <현재>
+        return (
+            <div>
+            <div className={styles.title}>
+                <h1>명언 디테일</h1>
+                    ...
+            </main>
+            <div>
+                <Link to={`/quotes/${quotesId}/comment`}> 코멘트 열기 </Link>   // 언제나 표시된다.
+            </div>
+
+
+    <중첩 라우트 응용>
+
+        return (
+            <div>
+            <div className={styles.title}>
+                <h1>명언 디테일</h1>
+                    ...
+            </main>
+                <div>
+                    <Route exact path={`/quotes/${quotesId}`}>   // 정확히 저 페이지가 아니면 표시되지 않는다. 
+                        <Link to={`/quotes/${quotesId}/comment`}> 코멘트 열기 </Link>  
+                    </Route>
+                </div>
+
+
+20. [useRouteMatch 를 통해, 유연한 "중첩 라우트 path" 만들기]
+
+    < 중첩라우트 : /quotes /q2 / >
+
+        import { useRouteMatch} from "react-router-dom";
+
+        const QuotesDetailComponent = (props) => {
+
+            const match = useRouteMatch()
+            console.log(match)
+
+    <결과>
+        isExact: false
+        params: {quotesId: 'q2'}
+        path: "/quotes/:quotesId"
+        url: "/quotes/q2"
+
+    ==> "현재의 path 와 url 을 가질 수 있다"
+
+    만약, 중첩된 Route 가 수십개고, 최상위 Route의 주소가 바뀐다면
+
+        path = "/route"                     // 이걸 바꾸면
+        path = "/route/comment"             // 중첩된 모든 라우트에 찾아가서
+        path = "/route/comment/ccoment"     // 전부 "바뀐 주소를 적용시켜야한다"
+                ...
+
+    하지만 useRouteMatch 를 사용하면 더이상 그럴 필요가 없다.
+
+    <현재 : 콘크리트 값으로 "중첩된 path" 작성>
+
+        return (
+            <div>
+                <div className={styles.title}>
+                    <h1>명언 디테일</h1>
+                    <p> 명언 ID : {quotesId}</p>
+                </div>
+                <main>
+                    <h2> {selectedQuote.content}</h2>
+                    <p> {selectedQuote.author}</p>
+                </main>
+                <div>
+                    <Route exact path={`/quotes/${quotesId}`}>      // 주소 하나하나 전부 작성 되어있다.
+                        <Link to={`/quotes/${quotesId}/comment`}> 코멘트 열기 </Link>   // 마찬가지
+                    </Route>
+                </div>
+                <div className={styles.comment}>
+                    <Route path={`/quotes/${quotesId}/comment`}>    // 마찬가지
+                        <QuotesComment quotesId={quotesId} />
+                    </Route>
+                </div>
+            </div>
+        );
+        
+
+    <변경 : useRouteMatch 를 사용하여 "중첩된 path" 작성 >
+
+        import {useRouteMatch} from "react-router-dom"
+
+        const QuotesDetailComponent = (props) => {
+
+            const match = useRouteMatch();
+        
+            return (
+                <div>
+                    <div className={styles.title}>
+                        <h1>명언 디테일</h1>
+                        <p> 명언 ID : {quotesId}</p>
+                    </div>
+                    <main>
+                        <h2> {selectedQuote.content}</h2>
+                        <p> {selectedQuote.author}</p>
+                    </main>
+                    <div>
+                        <Route exact path={`${match.url}`}>         // 최상위 Route 의 path 가 변경되어도, 상관없다
+                            <Link to={`${match.url}/comment`}> 코멘트 열기 </Link>  // 마찬가지
+                        </Route>
+                    </div>
+                    <div className={styles.comment}>
+                        <Route path={`${match.url}/comment`}>       // 마찬가지
+                            <QuotesComment quotesId={quotesId} />
+                        </Route>
+                    </div>
+                </div>
+            );
+        };
+        
+        export default QuotesDetailComponent;
+
+21. useLocation 과 useRouteMatch 의 차이점
+
+    1. "useLocation" 은, "현재 내가 들어가 있는 URL 에 대하여 알려준다"
+        => 브라우저의 URL 에 대하여 알려주는 것이고
+
+            hash :  ""
+            key: "bka7zu"
+            pathname: "/quotes"
+            search: ""
+            state: undefined
+
+    2. "useRouteMatch" 는, "코드를 작성한 곳의 path 를 알려준다."
+        => 나의 코드가 어느정도 충첩된 라우트에 있는지 알려주는 것
+
+            isExact: false
+            params: {quotesId: 'q2'}
+            path: "/quotes/:quotesId"
+            url: "/quotes/q2"
+
+        
+
+    
+   [ ITEM / ITEM-DETAIL ]
+        안에, 각각을 사용했다.
+            useLocation 
+            useRouteMatch 
+
+    그리고 "브라우저"는 [ ITEM / ITEM-DETAIL / COMMENT 페이지] 로 넘어왔다
+
+    "COMMNET 페이지"는, "ITEM-DETAIL 를 포함한 채"로, "중첩되어 화면에 표기되는 페이지"이다.
+
+        location.pathname: "/quotes/q2/comment"     ==> 현재 URL 을 표기
+        match.path: "/quotes/:quotesId"             ==> 코드가 어디에 있는지 표기
+        math.url : "/quotes/q2"
+
+    "브라우저"는 [ ITEM / ITEM-DETAIL 페이지] 로 넘어왔다
+
+        location.pathname: "/quotes/q2/"            ==> 현재 URL 을 표기
+        match.path: "/quotes/:quotesId"             ==> 코드가 어디에 있는지 표기
+        math.url : "/quotes/q2"
+        
+    즉, "현재 URL 위치" 에 대하여 중요한, "쿼리 매개변수 의 추출" 등에는 [useLocation 을 쓰는 것이 현명]
+        "현재 코드의 위치" 에 대하여 중요한, "중첩 라우트의 path 설정" 등에는 [ useRouteMatch 을 쓰는 것이 현명]
+
+22. useHistory 에 관하여, "복잡한 쿼리매개변수와 path 를 가지고 있을때, 깔끔하게 사용하는 방법"
+
+        history.push(`/.../.../.../......... ?xxx= ${(isAscending ? yyy : zzz)}`)  `
+
+    처럼 복잡한 path 와 쿼리 파라미터를 가지고 있다면," history 의 속성을 직접 파고들어 지정하는 것"이 더 가독성이 좋을 수 있다.
+
+
+        history.push({
+            pathname: "xxx/xxx/xxx/..."
+            search : `?arrangeRule = ${(isAscending ? yyy : zzz)}`
+
+        })
+
+    이렇게 훨씬 잘보이게 사용 가능하다.
+
+    [history 는, "URL" 의 주소를 변경하는 훅이므로, useLocation 과 동일한 옵션을 가진다.]
+
+23. Http 메서드를 이용해, DB에 값을 넣고, 값을 받아오기
+
+    1. 새 값 넣기 [ POST fetch 후, dispatch 를 통해, State 변경]
+
+        <components/new-quotes/new-quotes-form.js>
+
+            // 제출 핸들러
+
+            const submitHandler = async (e) => {
+            e.preventDefault();
+        
+            const quotes = {
+                id: idState,
+                author: authorState,
+                content: contentState,
+            };
+        
+            await fetch("https://react-router-project-41a4b-default-rtdb.firebaseio.com/Quotes.json",{
+                method: "POST",
+                body: JSON.stringify(quotes),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                }
+            );
+        
+            dispatch(quotesActions.addQuotes({ quotes }));
+        
+            history.replace("/quotes");
+            };
+
+    2. DB 값 받아오기, with "Thunk 액션생성자" [생성]
+
+        <store / quotes-actions.js >
+
+            import { quotesActions } from "./quotes-slice";
+
+            export const getQuotesData = () => {            // 일반 함수 생성
+                return async (dispatch) => {                // State 에 넣을 것이기 때문에, dispatch 를 파라미터에
+                                                            // 이 스코프 내에서 "fetch" 사용할 것이기 때문에 "async"
+
+                    const fetchData = async () => {         // "fetch 함수 정의"
+                        const response = await fetch(
+                            "https://react-router-project-41a4b-default-rtdb.firebaseio.com/Quotes.json"
+                        );
+
+                        const responseData = await response.json();
+                                
+                        const refinedData = [];             // 파이어베이스 에서 오는 것 재정리
+
+                        for (const key in responseData) {
+                            refinedData.push({
+                                id: responseData[key].id,
+                                content: responseData[key].content,
+                                author: responseData[key].author,
+                            });
+                        }
+
+                        return refinedData;
+                    };
+
+                    const allQuotes = await fetchData();        // "fetch 함수 실행
+"
+                    dispatch(quotesActions.replaceQuotes(allQuotes));   // State 에 넣어준다.
+                };
+            };
+
+    3. DB 값 받아오기2, with "Thunk 액션생성자" [사용]
+
+        < pages / quotes-all.js >
+
+            import AllQuotesComponent from "../components/quotes/all-quotes";
+            import { useSelector, useDispatch } from "react-redux";
+            import { getQuotesData } from "../store/quotes-actions";
+            import { useEffect } from "react";
+
+            const AllQuotes = () => {
+                const quotesState = useSelector((state) => state.quotesSlice.allQuotes);
+                const dispatch = useDispatch();
+
+                useEffect(() => {
+                    dispatch(getQuotesData());      // dispatch 를 통해 사용
+                }, [dispatch]);
+
+                return (
+                    <div>
+                        <h1>명언들</h1>
+                        <main>
+                            <AllQuotesComponent />
+                        </main>
+                    </div>
+            );
+            };
+
+            export default AllQuotes;
