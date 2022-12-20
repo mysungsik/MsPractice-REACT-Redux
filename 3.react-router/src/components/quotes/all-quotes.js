@@ -14,6 +14,7 @@ const reArrangeQuotes = (quotes, isAscending) => {
 
 const AllQuotesComponent = () => {
   const allQuotesState = useSelector((state) => state.quotesSlice.allQuotes);
+
   const history = useHistory();
   const location = useLocation();
 

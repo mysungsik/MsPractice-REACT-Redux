@@ -1012,3 +1012,101 @@
             };
 
             export default AllQuotes;
+
+24. ui State Slice 추가하여, fetch 중간에, 로딩중이라면, [로딩 문구 나오게 만들기]
+
+    1. <store / uiSlice.js>     
+        :  "ui 전용 slice 를 만든다"
+
+            import { createSlice } from "@reduxjs/toolkit";
+
+            const initialState = { getFetchLoading: false };
+
+            const uiSlice = createSlice({
+                name: "ui",
+                initialState,
+                reducers: {
+                    fetchLoading(state, action) {
+                    state.getFetchLoading = action.payload;
+                    },
+                },
+            });
+
+            export const uiActions = uiSlice.actions;
+
+            export default uiSlice.reducer;
+
+
+    2. <store / quotes-actions.js >
+        : "페치의 시작, 끝날때, 로딩 스테이트를 업데이트시킨다."
+
+            import { quotesActions } from "./quotes-slice";
+            import { uiActions } from "./ui-slice";
+
+            export const getQuotesData = () => {
+                return async (dispatch) => {
+
+                    dispatch(uiActions.fetchLoading(true));         // [로딩] 시작하면 로딩
+
+                    const fetchData = async () => {
+                        const response = await fetch(
+                            "https://react-router-project-41a4b-default-rtdb.firebaseio.com/Quotes.json"
+                        );
+
+                        const responseData = await response.json();
+
+                        // 파이어베이스 에서 오는 것 재정리
+                        const refinedData = [];
+
+                        for (const key in responseData) {
+                            refinedData.push({
+                            id: responseData[key].id,
+                            content: responseData[key].content,
+                            author: responseData[key].author,
+                            });
+                        }
+
+                        return refinedData;
+                    };
+
+                    const allQuotes = await fetchData();
+                    dispatch(uiActions.fetchLoading(false));        // [로딩] 끝나면 로딩 끝
+
+                    dispatch(quotesActions.replaceQuotes(allQuotes));
+                };
+            };
+
+    3. < pages / all-quotes.js >
+
+        import AllQuotesComponent from "../components/quotes/all-quotes";
+        import { useDispatch, useSelector } from "react-redux";
+        import { getQuotesData } from "../store/quotes-actions";
+        import { useEffect } from "react";
+
+        const AllQuotes = () => {
+            const uiState = useSelector((state) => state.uiSlice.getFetchLoading);      // uiState 를 뽑아서
+
+            const dispatch = useDispatch();
+
+            useEffect(() => {
+                dispatch(getQuotesData());
+            }, [dispatch]);
+
+            if (uiState) {
+                return <p> loading</p>;     // uiState 가 true 면 Loading 이 나오게한다. [후에, 로딩스피너, CSS 다 적용시켜서도 가능]
+            }
+            
+            return (
+                <div>
+                <h1>명언들</h1>
+                <main>
+                    <AllQuotesComponent />
+                </main>
+                </div>
+            );
+        };
+
+        export default AllQuotes;
+
+
+25. 댓글기능을 추가해본다.
