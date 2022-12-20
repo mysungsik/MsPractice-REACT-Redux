@@ -1,16 +1,21 @@
 import AllQuotesComponent from "../components/quotes/all-quotes";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getQuotesData } from "../store/quotes-actions";
 import { useEffect } from "react";
 
 const AllQuotes = () => {
-  const quotesState = useSelector((state) => state.quotesSlice.allQuotes);
+  const uiState = useSelector((state) => state.uiSlice.getFetchLoading);
+
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(getQuotesData());
   }, [dispatch]);
 
+  if (uiState) {
+    return <p> loading</p>;
+  }
+  
   return (
     <div>
       <h1>명언들</h1>
