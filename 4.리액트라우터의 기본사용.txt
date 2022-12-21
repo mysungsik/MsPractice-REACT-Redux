@@ -193,7 +193,7 @@
         import { useParams } from "react-router-dom";
 
         function ProductDetail() {
-        const productName = useParams();
+        const params = useParams();
         
         console.log(productName);       // 아래 각각 페이지에 들어 갈때,
         return (

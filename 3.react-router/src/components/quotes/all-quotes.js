@@ -1,5 +1,6 @@
 import { useSelector } from "react-redux";
 import { Link, useHistory, useLocation } from "react-router-dom";
+import Toast from "../UI/toast/toast";
 
 // 0. sort 함수를 정의한다. (컴포넌트 함수 밖에 : 그저 헬퍼 함수일 뿐이므로)
 const reArrangeQuotes = (quotes, isAscending) => {
@@ -46,7 +47,7 @@ const AllQuotesComponent = () => {
   return (
     <div>
       <div>
-        <button onClick={arrangeHandler}>
+        <button className="btn btn-primary" onClick={arrangeHandler}>
           {isAscending ? "내림차순" : "오름차순"}
         </button>
       </div>

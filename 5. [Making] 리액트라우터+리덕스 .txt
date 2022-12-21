@@ -557,8 +557,6 @@
             
                 history.replace("/quotes");
               };
-
-           
         }
 
        
@@ -690,7 +688,7 @@
             const history = useHistory();
             const location = useLocation();
         
-            const allQuotesData = [...allQuotesState];
+            const allQuotesData = [...allQuotesState];                  //  State 를 따로 빼서 사용 **
         
             const queryParams = new URLSearchParams(location.search);   // 1. 쿼리 파라미터 빼온다.
             const arrageRule = queryParams.get("arrangeRule");          // 2. 쿼리 파라미터의 "값" 을 뺀다.
@@ -772,7 +770,7 @@
 
     < 중첩라우트 : /quotes /q2 / >
 
-        import { useRouteMatch} from "react-router-dom";
+        import { useRouteMatch } from "react-router-dom";
 
         const QuotesDetailComponent = (props) => {
 
@@ -1008,7 +1006,7 @@
                             <AllQuotesComponent />
                         </main>
                     </div>
-            );
+                );
             };
 
             export default AllQuotes;

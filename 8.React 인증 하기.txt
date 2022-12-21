@@ -1,0 +1,451 @@
+1. 일단 라우터 깔고
+
+    npm i react-router-dom@5
+
+2. 서버 사이드 세션 인증 방식
+    서버에 id 를 저장하고, 제출, 확인, 인증서 발급
+
+    프론트엔드와 백엔드가 나뉘어 있는 REST API 에서는,
+    프론트와 백의 결합이 느슨하므로, 사용하면 위험하다.
+    언제 정보가 새어나갈지 모른다.
+
+3. 토큰 인증 방식
+    클라이언트가 서버에 ID,PASSWORD 제출
+    서버에서 확인
+    서버가 "토큰"을 생성, 클라이언트에게 "토큰" 발급
+    "토큰"은 "서버만 알고 있음"
+    서버는 "자신이 생성한 토큰인지 확인이 가능함"
+    클라이언트는 발급받은 "토큰"을 요청할때 같이 제출
+
+
+** Nextjs 에서는, Next-auth 를 사용하였다.
+[이번에는 fire-base Auth 를 사용해본다.]
+
+4. FireBase Auth
+    파이어베이스에 들어가면
+    [빌드] - [Authentication] 파트가 있다.
+
+    [시작하기] 를 누르면, 원하는 인증 방식을 선택
+
+    [Users] 탭에 가면, [사용자 추가] 가 가능하다.
+
+
+5. Email, password 를 사용한 인증 DOCS
+
+    우측 사이드바에 보면, 인증에 관한 목록들이 쭉 나와있다.
+    https://firebase.google.com/docs/reference/rest/auth?hl=en&authuser=0#section-create-email-password
+
+    1) You can create a new email and password user by issuing an HTTP POST request 
+        to the Auth signupNewUser endpoint.
+
+        [POST 리퀘스트로 보내라]
+
+    2) https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=[API_KEY]
+
+        ** [API_KEY] 는 내 파이어 베이스 프로젝트의 [세팅] 에 가보면, [Web API KEY] 가 있는데 그거 넣어주면된다.
+
+        * AIzaSyAxe7GPLnV_nM-s_SExIFnA1VvboXPmR2g
+
+        [여기로]
+
+    3) Request Body Payload
+        PropertyName	            Type	    Description
+           1. email	                string	    The email for the user to create.
+           2. password	            string	    The password for the user to create.
+           3. returnSecureToken	    boolean	    Whether or not to return an ID and refresh token. Should always be true.
+
+        [이 3개를 ]
+
+6. 코드
+
+    const LoginComponent = () => {
+        const submitHandler = async (e) => {
+            e.preventDefault();
+
+            const enteredEmail = emailRef.current.value;
+            const enteredPassword = passwordRef.current.value;
+
+            // [추가할것] 당연히, Validation 추가해야하고
+
+            if (isLogin) {
+            } else {
+            const response = await fetch(
+                "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAxe7GPLnV_nM-s_SExIFnA1VvboXPmR2g",
+                {
+                method: "POST",
+                body: JSON.stringify({
+                    email: enteredEmail,
+                    password: enteredPassword,
+                    returnSecureToken: true,
+                }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                }
+            );
+            // [추가할것]response.ok 를 통해 이상하면 에러출력하고
+
+            const responseData = await response.json();
+
+            console.log(responseData)       // 혹시모를 에러데이터를 보내줄 수도 있으니 한번 쳐보자
+            }
+        };
+            ...
+    }
+
+7. 와우! 파이어베이스의 Authentication 탭에, User 가 추가되었다!
+
+8. 회원가입 에러
+
+    파이어베이스는 회원가입 "자체 Validation 로직" 을 만족하지 않으면 에러를 보내준다.
+
+        error: 
+            {code: 400, 
+            message: 'WEAK_PASSWORD : Password should be at least 6 characters', 
+            errors: Array(1)}
+        [[Prototype]]
+        : Object
+
+    "responseData.error 가 존재"한다면
+
+    "responseData.error.message" 를 통해, "유저들에게 로그인 실패 메시지를 전달 할 수 있는 것"이다.
+
+9. 회원가입 에러 메시지 띄워주기
+
+        const [errorMessage,setErrorMessage] = useState("")
+
+                ...  
+
+            const responseData = await response.json();
+
+            if (responseData.error) {
+                setErrorMessage(responseData.error.message);
+            }
+
+        return(
+                ...
+            {errorMessage !== "" && <p className={classes.error}> {errorMessage}</p>}
+        )
+
+10. 항상 "로딩!" 을 신경써라! 로딩 스테이트로, 로딩 메시지 출력하기
+
+    : 로딩중일때, 버튼을 없애고, 로딩스피너를 띄워보자
+
+    <부트스트랩 스피너>
+
+        const Spinner = () => {
+            return (
+            <div className="spinner-border" role="status">
+                <span className="visually-hidden">Loading...</span>
+            </div>
+            );
+        };
+        export default Spinner;
+
+    < 회원가입 컴포넌트 >
+
+        const [loading, setLoading] = useState(false)
+
+        const submitHandler = async (e) => {
+            e.preventDefault();
+            setLoading(true);       // 로딩
+
+                    ...
+
+            const responseData = await response.json();
+            setLoading(false); // 로딩 끝
+      
+            if (responseData.error) {
+              setErrorMessage(responseData.error.message);
+            
+            }
+        };
+
+        return (
+                ...
+
+            {loading ? ( <Spinner />) : (                   // 로딩중이면, 스피너, 아니면, 버튼
+                    <button> {isLogin ? "Login" : "Create Account"} </button>   // 로그인이면 로그인,  아니면, 회원가입
+            )}
+        )
+     
+11. 로그인 구현하기
+
+    https://firebase.google.com/docs/reference/rest/auth?hl=en&authuser=0#section-sign-in-email-password
+
+    얘도 포스트네
+
+    1) You can sign in a user with an email and password by issuing an HTTP POST 
+        request to the Auth verifyPassword endpoint.
+
+    2) https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=[API_KEY]
+
+    3)  Request Body Payload
+
+        PropertyName	        Type	    Description
+         1.email	            string	    The email the user is signing in with.
+         2.password	            string	    The password for the account.
+         3.returnSecureToken	boolean	    Whether or not to return an ID and refresh token. Should always be true.
+
+12. 로그인의 결과 [ 역시나 DOCS 에 잘 설명되어있음]
+
+    displayName: ""
+    email: "test1@test.com"
+    expiresIn: "3600"
+    idToken: "eyJ.... PnYxeA" // 한 300글자 넘는거같다;
+    kind: "identitytoolkit#VerifyPasswordResponse"
+    localId: "DwoMYbTelFTbRKAdQz3mevkqq0N2"
+    refreshToken: "AOkhONV2j...k3bh_8"  // 한 300글자 넘는거같다;
+    registered: true
+
+    *** 가장 주목해서 보아야 할것은 "idToken" 이다. email 도 아이디니까 쓸모는 많을테지
+
+13. 로그인 State 의 저장
+
+    로그인했다. 어떻게하지?
+    [로그인상태를 저장해야지]
+    전역으로 같이 저장되어야 하므로, Redux 혹은, Context 
+
+    Redux 연습겸, Redux 를 쓰도록한다.
+    자주 바뀌지 않는 State 이므로, Context 를 사용해도 괜찮을 것 같다.
+
+    1) 리덕스 툴킷 
+        npm install @reduxjs/toolkit
+    2) 리액트 리덕스
+        npm install react-redux 
+
+    
+14. redux 를 통한 저장 [ 이건 근데 안쓸거임. 쿠키 쓸거임 ] 
+
+    1. store [ auth-Slice  ]
+
+            import { createSlice } from "@reduxjs/toolkit";
+
+            const initialState = { isAuth: false, authEmail: "" };
+
+            const authSlice = createSlice({
+                name: "auth",
+                initialState,
+                reducers: {
+                    login(state, actions) {
+                        state.authToken = actions.payload.authToken;
+                        state.isAuth = actions.payload.isAuth;
+                    },
+                },
+            });
+
+            export const authActions = authSlice.actions;
+
+            export default authSlice;
+
+    2. store [ index ]
+
+            import { configureStore } from "@reduxjs/toolkit";
+            import authSlice from "./auth-Slice";
+
+            const store = configureStore({
+                reducer: authSlice.reducer,
+            });
+
+            export default store
+
+    3. [ index.js ]
+
+            import { Provider } from "react-redux";
+            import store from "./store";
+
+            import "./index.css";
+            import App from "./App";
+
+            const root = ReactDOM.createRoot(document.getElementById("root"));
+            root.render(
+                <Provider store={store}>
+                    <BrowserRouter>
+                        <App />
+                    </BrowserRouter>
+                </Provider>
+            );
+
+    4. [ auth-form 사용 ]
+
+        import { useDispatch, useSelector } from "react-redux";
+        import { authActions } from "../../store/auth-Slice";
+
+        const authState = useSelector((state) => state.isAuth);
+        const dispatch = useDispatch();
+
+        if (isLogin) {
+            const response = await fetch(
+                    ...
+            )
+            
+            const responseData = await response.json();
+
+            dispatch( authActions.login({ isAuth: true, authToken: responseData.idToken }));
+
+        }
+
+15. 쿠키를 통한 저장
+    State 에 넣었다고? 무슨 의미가 있을까!
+    새로고침하면 풀리는데!
+
+    쿠키에 저장해보자
+
+    https://www.npmjs.com/package/react-cookie
+    
+    1) [설치] ==================================================
+        npm install react-cookie
+
+
+    2)  [쿠키 Provider] ==================================================
+    
+        import { CookiesProvider } from "react-cookie";
+
+        import "./index.css";
+        import App from "./App";
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(
+            <CookiesProvider>               // 쿠키 프로바이더
+                <Provider store={store}>
+                    <BrowserRouter>
+                        <App />
+                    </BrowserRouter>
+                </Provider>
+            </CookiesProvider>
+        );
+
+    3) [쿠키 사용] ==================================================
+    
+        import { useCookies } from "react-cookie";
+
+        const AuthComponent =() =>{
+            const [cookies, setCookie ,removeCookie ] = useCookies(["auth-cookie"]);    // auth-cookie 는 내가 정한 쿠키 이름
+
+            setCookie("auth-cookie", responseData.idToken); // "auth-cookie" 에다가,  "responseData.idToken" 를 담겠다
+
+            console.log(cookies)                    // {auth-cookie : "....."}
+
+            console.log(cookies["auth-cookie"]);    // "....."
+        }
+
+    4) [쿠키 삭제] ==================================================
+
+        const MainNavigation = () => {
+            const [cookies, removeCookie] = useCookies(["auth-cookie"]);
+        
+            const logoutHandler = (e) => {
+                e.preventDefault();
+                removeCookie("auth-cookie");
+                };
+            
+                console.log(cookies);       // {auth-cookie: 'undefined'}
+    
+    5) [추가] ==================================================
+
+        setCookie 와 removeCookie 의 옵션을 통해,
+        언제 expire 될지, 그런것들 정할 수 있다.
+
+        패키지를 잘 읽어보자
+
+16. 쿠키를 사용하여, 로그인 되어있을때에는, 항목 변경시키기
+
+    < 메인 헤더 >
+
+            import classes from "./MainNavigation.module.css";
+            import { Link } from "react-router-dom";
+            import { useCookies } from "react-cookie";
+
+            const MainNavigation = () => {
+                const [cookies, removeCookie] = useCookies(["auth-cookie"]);
+
+                const logoutHandler = (e) => {
+                    e.preventDefault();
+                    removeCookie("auth-cookie");
+                };
+
+                let isAuth = false;     // 초기 isAuth 는 false
+
+                if (cookies["auth-cookie"] !== "undefined") {   // 만약 쿠키가 "undefined" 가 아니면, "로그인중"
+                    isAuth = true;
+                }
+
+                return (
+                    <header className={classes.header}>
+                        <Link to="/">
+                            <div className={classes.logo}>React Auth</div>
+                        </Link>
+                        <nav>
+                            <ul>
+                                <li> <Link to="/auth">Login</Link> </li>
+                                <li> <Link to="/profile">Profile</Link> </li>
+                                <li> {isAuth && <button onClick={logoutHandler}>Logout</button>} </li>  // "로그인중"에만 "로그아웃 표시"
+                            </ul>
+                        </nav>
+                    </header>
+                );
+            };
+
+            export default MainNavigation;
+
+        등등..
+
+17. 보호된 요청에 접근하기 [ 비밀번호 변경 등 ... ]
+
+    파이어베이스 AUTH DOCS - [비밀번호 변경 요청]
+        https://firebase.google.com/docs/reference/rest/auth?hl=en&authuser=0#section-change-password
+
+
+
+    Property Name	            Type	    Description
+        1. idToken	            string	    A Firebase Auth ID token for the user.
+        2. password	            string	    User's new password.
+        3. returnSecureToken	boolean	    Whether or not to return an ID and refresh token.
+
+    아하! "idToken" 을 제시하라고 하는구나!
+
+    "넣어서 보내면, 비밀번호가 바뀐다"
+
+18. 클라이언트 보호 [ 리디렉션 설정하기 ]
+    : 인증토큰이 없다면, 강제로 페이지에서 벗어나는 클라이언트 보호를 실현한다.
+
+    1) 들어가면 튀어나가게 만들기
+
+        import { useCookies } from "react-cookie";
+        import { useHistory } from "react-router-dom";
+
+        const ProfileForm = () => {
+            const [cookies] = useCookies(["auth-cookie"]);      // 쿠키 빼보고
+            const history = useHistory();
+
+            let isAuth = false;
+            if (cookies["auth-cookie"] !== "undefined") {       // 없으면 너 인증안됐다
+                isAuth = true;
+            }
+
+            if (!isAuth) {                                      // 안됐으면 나가라
+                history.replace("/");
+
+    2) 버튼 자체를 없애기
+
+        아까한거 [16번에서 한거]
+
+        
+19. 로그아웃 구현
+
+
+    const MainNavigation = () => {
+        const [cookies, removeCookie] = useCookies(["auth-cookie"]);
+
+        const logoutHandler = (e) => {
+            e.preventDefault();
+            removeCookie("auth-cookie");        // 쿠키를 지워버려!
+        };
+
+
+
+[종합]
+
+1. 파이어베이스 AUTH 를 사용하여, 로그인 요청을 해보았다.
+2. 로그인하면 보내주는 토큰을 가지고, 쿠키에 저장해보았다.
+3. 쿠키에 값을 가지고, [ 보호된 요청 ] 을 해보거나, [ 클라이언트를 보호 ] 해보았다.
