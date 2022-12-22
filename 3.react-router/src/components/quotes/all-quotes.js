@@ -46,7 +46,7 @@ const AllQuotesComponent = () => {
   return (
     <div>
       <div>
-        <button onClick={arrangeHandler}>
+        <button className="btn btn-primary" onClick={arrangeHandler}>
           {isAscending ? "내림차순" : "오름차순"}
         </button>
       </div>

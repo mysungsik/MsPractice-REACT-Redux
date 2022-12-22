@@ -2,7 +2,7 @@
 
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = { getFetchLoading: false };
+const initialState = { getFetchLoading: false, isSignup: false };
 
 const uiSlice = createSlice({
   name: "ui",
@@ -10,6 +10,9 @@ const uiSlice = createSlice({
   reducers: {
     fetchLoading(state, action) {
       state.getFetchLoading = action.payload;
+    },
+    signupModalOn(state, action) {
+      state.isSignup = action.payload;
     },
   },
 });

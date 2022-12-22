@@ -1,0 +1,162 @@
+순서
+1. 코드 테스트
+2. 최적화
+3. 빌드
+4. 배포
+
+[최적화] =============================================================================
+
+    1. React.memo()
+    2. 레이지 로딩
+
+=============================================================================
+
+1. 레이지 로딩
+    : 코드를 나누어, "필요할 때만 로딩 하는 것"
+
+    기본적으로 페이지를 방문하게 되면, 사용자는 "모든 자바스크립트 번들" 을 "전부 다운로드 받게 된다."
+    이후, 사용을 시작 할 수 있게 되는 것이다.
+
+    그런데, 잘 들어가지 않는 페이지들까지 전부 다운로드 해야할까?
+    그러면 너무나도 비효율적으로 데이터를 낭비하는 꼴이 될것이다.
+
+    그러므로, "레이지 로딩"을 사용하여, "필요한 경우에만 코드를 다운로드를 받도록 한다."
+
+    [라우트] 를 사용하면, "레이지 로딩의 구현이 매우 쉬워진다."
+
+
+    <레이지 로딩 구동 전>
+        
+            import { Route, Redirect, Switch } from "react-router-dom";
+            import MainHeader from "./components/headers/main-header";
+            import Welcome from "./pages/welcome";
+         
+            import ProductDetail from "./pages/product-detail";
+            
+                ...
+            <Switch>
+                <Route exact path="/">   
+                    <Redirect to="/welcome" />
+                </Route>
+                <Route path="/welcome">
+                    <Welcome />
+                </Route>
+                <Route exact path={"/products"}>
+                    <Products />
+                </Route>
+                <Route path={"/products/:productsName"}>
+                    <ProductDetail />
+                </Route>
+            </Switch>
+
+
+    <레이지 로딩 구동> : 일부만
+                  
+        import React from "react"                   // React 임포트
+        import { Route, Redirect, Switch } from "react-router-dom";
+                ...               
+        const Products = React.lazy(()=> import("./pages/product")) // 프로덕트 레이지로딩
+
+            <Switch>
+                <Route exact path="/">   
+                    <Redirect to="/welcome" />
+                </Route>
+                <Route path="/welcome">
+                    <Welcome />
+                </Route>
+                <Route exact path={"/products"}>
+                    <Products />
+                </Route>
+                <Route path={"/products/:productsName"}>
+                    <ProductDetail />
+                </Route>
+            </Switch>
+
+
+2. 지연 로딩 추가하기
+    : 페이지가 "들어가지지 않는다." 페이지를 눌렀을땐 "아직 다운로드 중이니까", 들어가지 못하는 것이다.
+
+    그러므로, 이러한 페이지를, 들어갈때, 다운로드 하는 시간이 필요하다.
+
+    다운로드 하는 시간 동안 기다리게 만들도록, "지연 로딩" 을 추가해야한다.
+
+        import React, {Suspense} from "react"       // Suspense 
+
+        1) Suspense 는 모든 라우트를 감싸며
+        2) fallback 옵션을 통해, "지연되는 시간동안 렌더될 컴포넌트 혹은 JSX 코드를 적을 수 있다."
+
+
+    <최종>
+
+    import React, {Suspense} from "react"                   // React, Suspense 임포트
+    import { Route, Redirect, Switch } from "react-router-dom";
+            ...               
+    const Products = React.lazy(()=> import("./pages/product")) // 프로덕트 레이지로딩
+
+        <Suspense fallback = {<p> ...loading </p>}>      // Suspense 로 감싸준다.
+            <Switch>
+                <Route exact path="/">   
+                    <Redirect to="/welcome" />
+                </Route>
+                <Route path="/welcome">
+                    <Welcome />
+                </Route>
+                <Route exact path={"/products"}>
+                    <Products />
+                </Route>
+                <Route path={"/products/:productsName"}>
+                    <ProductDetail />
+                </Route>
+            </Switch>
+        </Suspense>     // Suspense 로 감싸준다.
+
+    혹은 컴포넌트도 가능하다
+
+        <Suspense fallback = {<div>
+                <LoadingSpinner/ > 
+            </div>}> 
+
+
+[ ** 사람들이 잘 들어가지 않을 것 같은 페이지에 한 해, 레이지 로딩을 하도록 한다!]
+
+3. 빌드 하자!
+
+    npm run build
+
+    ** 리액트앱은 어쨌든 서버측 코드가 없는, "정적 앱" 이라는 것을 반드시 인지하자.
+    ** Nextjs 나, Nodejs 처럼 "서버측 코드가 존재하는 앱이 아니다."
+
+    React를 만들 때 "서버에 요청"만 할뿐, 우리가 직접 "서버가 되어, 그 요청을 응답" 하는 코드는 없었다.
+    반면, Nextjs 나, Nodejs 를 만들 때에는, (req,res) 를 통해서, 받은 응답을 검사하고, 응답하는 코드를 작성 할 수 있었다.
+
+    그게 REST API 의 핵심이자, "서버측 코드를 보유" 하고 있는 상태이다.
+
+
+4. 클라이언트 사이드 라우팅 VS 서버 사이드 라우팅
+
+    <라우터가 있는 리액트 앱을 배포할때 주의 할 것>
+    
+        [클라이언트측]
+            1) 리액트는 SPA 를 만들때 유용한 라이브러리 이다.
+            2) 나는 SPA 로 만들고 배포를 시작했다.
+            3) 만들 앱에는 ROUTER 가 포함되어 있다.
+            4) ROUTER 는, "URL" 을 보고 "다른 페이지를 로드 시킨다".
+            5) 클라이언트는 서버로 "요청"을 보내고, 서버는 "URL"을 보고 해당 "URL 에 적절한 응답을 보낸다."
+        
+        [서버측]
+            1) 앱 이름을 MS 로 하여 배포했다고 가정하자.
+            2) https://MS.com 이 배포 주소가 될것이다.
+            3) "다른 URL" 은 서버로부터 "다른 응답" 을 받는다.
+            4) http://localhost:3000/quotes 로 요청을 받는다면? "다른 응답"을 받을 것이다.
+            5) "다른 응답?" 그러면, "SPA 의 장점은 어디로 간거지?"
+
+        => 우리는 "하나의 파일"로 존재하는 "SPA" 를 만들었다.
+            서버에서 받을 응답은 "단 하나의 리액트 앱" 이지, "여러 페이지를 각각 가진 앱" 이 아니다.
+
+            그러므로, 서버로부터, "어떤 주소를 요청하던, 같은 응답을 받게 해야한다".
+            그렇게 되면, "리액트 앱" 이 실행되고, "실행된 리액트 앱이 라우트 기능을 실현시킬 것이다."
+
+        => 서버가 "/SOMETHING" 처럼 뒤에 붙는 url 주소로 가는 요청을 "무시" 하고 "하나의 응답만을 보내게 설정해야한다"
+            어떠한 종류의 "URL" 이든 같은 "메인 HTML 파일 을 보내주게 해야 한다"
+
+        * 대부분 배포 사이트의 SPA 입니까? 를 물어보는 탭이 있다. YES 를 누르자.
